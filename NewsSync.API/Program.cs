@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using NewsSync.API.Data;
 using NewsSync.API.Repositories;
 using NewsSync.API.Services;
+using NewsSync.API.Services.Notification;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -121,6 +122,8 @@ builder.Services.AddSingleton<Dictionary<string, INewsAdapter>>(sp => new()
 });
 
 builder.Services.AddHostedService<NewsFetcherBackgroundService>();
+
+builder.Services.AddScoped<NewsSync.API.Services.Notification.INotificationService, EmailNotificationService>();
 
 
 var app = builder.Build();
