@@ -1,0 +1,50 @@
+# Build results
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+[Ll]ogs/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Visual Studio
+.vscode/
+.vs/
+
+# Rider
+.idea/
+
+# Packages
+*.nupkg
+*.snupkg
+packages/
+
+# Dotnet generated secrets
+secrets.json
+
+# Configuration
+appsettings.Development.json
+appsettings.Local.json
+
+# Node/npm artifacts (if using frontend)
+node_modules/
+dist/
+.env
+
+# Others
+*.db
+*.log
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+Notes.md
