@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NewsSync.API.Models.DTOs;
+using NewsSync.API.Models.Contants;
+using NewsSync.API.Models.DTO;
 using NewsSync.API.Services;
 
 namespace NewsSync.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = RoleNames.User)]
     public class SavedArticleController : ControllerBase
     {
         private readonly ISavedArticleService savedArticleService;
@@ -39,7 +42,6 @@ namespace NewsSync.API.Controllers
             return Ok("Article saved successfully.");
         }
 
-        // Controllers/SavedArticleController.cs
         [HttpDelete]
         public async Task<IActionResult> DeleteSavedArticle(
             [FromQuery] string userId,

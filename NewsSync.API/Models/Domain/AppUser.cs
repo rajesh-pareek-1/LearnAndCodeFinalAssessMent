@@ -1,6 +1,10 @@
 using Microsoft.AspNetCore.Identity;
 
-public class AppUser : IdentityUser
+namespace NewsSync.API.Models.Domain
 {
-    public string DisplayName { get; set; } = string.Empty;
+    public class AppUser : IdentityUser
+    {
+        public string DisplayName { get; set; } = string.Empty;
+    }
 }
+

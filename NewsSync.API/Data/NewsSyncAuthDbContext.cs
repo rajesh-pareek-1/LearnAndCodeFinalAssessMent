@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using NewsSync.API.Models.Constants;
+using NewsSync.API.Models.Domain;
 
 namespace NewsSync.API.Data
 {
@@ -12,24 +14,21 @@ namespace NewsSync.API.Data
         {
             base.OnModelCreating(builder);
 
-            var adminRoleId = "f26f55ee-19b3-4d2d-9f2a-f201bf1fbb5e";
-            var userRoleId = "e7134a9c-c693-4b3a-b9ea-d43b3039b3a2";
-
             var roles = new List<IdentityRole>
             {
                 new IdentityRole
                 {
-                    Id = adminRoleId,
-                    ConcurrencyStamp = adminRoleId,
-                    Name = "Admin",
-                    NormalizedName = "Admin".ToUpper()
+                    Id = RoleConstants.AdminRoleId,
+                    ConcurrencyStamp = RoleConstants.AdminRoleId,
+                    Name = RoleConstants.AdminRoleName,
+                    NormalizedName = RoleConstants.AdminRoleName.ToUpper()
                 },
                 new IdentityRole
                 {
-                    Id = userRoleId,
-                    ConcurrencyStamp = userRoleId,
-                    Name = "User",
-                    NormalizedName = "User".ToUpper()
+                    Id = RoleConstants.UserRoleId,
+                    ConcurrencyStamp = RoleConstants.UserRoleId,
+                    Name = RoleConstants.UserRoleName,
+                    NormalizedName = RoleConstants.UserRoleName.ToUpper()
                 }
             };
 
