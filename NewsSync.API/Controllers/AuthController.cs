@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using NewsSync.API.Models.Contants;
+using NewsSync.API.Models.Domain;
 using NewsSync.API.Models.DTO;
 using NewsSync.API.Repositories;
-using NewsSync.API.Models.Domain; // Make sure AppUser is defined here
 
 namespace NewsSync.API.Controllers
 {
@@ -10,17 +11,16 @@ namespace NewsSync.API.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly UserManager<AppUser> userManager;
-        private readonly ITokenRepository tokenRepository;
+        private readonly UserManager<AppUser> _userManager;
+        private readonly ITokenRepository _tokenRepository;
 
-        public AuthController(UserManager<AppUser> userManager, ITokenRepository tokenRepository)
+        public AuthController(UserManager<AppUser> _userManager, ITokenRepository _tokenRepository)
         {
-            this.userManager = userManager;
-            this.tokenRepository = tokenRepository;
+            this._userManager = _userManager;
+            this._tokenRepository = _tokenRepository;
         }
 
-        // POST: api/auth/register
-        [HttpPost("Register")]
+        [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto registerRequestDto)
         {
             var appUser = new AppUser
@@ -29,13 +29,12 @@ namespace NewsSync.API.Controllers
                 Email = registerRequestDto.Username
             };
 
-            var result = await userManager.CreateAsync(appUser, registerRequestDto.Password);
+            var result = await _userManager.CreateAsync(appUser, registerRequestDto.Password);
 
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            // 👇 Automatically assign the "User" role (don't accept from client)
-            var roleResult = await userManager.AddToRoleAsync(appUser, "User");
+            var roleResult = await _userManager.AddToRoleAsync(appUser, RoleNames.User);
 
             if (!roleResult.Succeeded)
                 return BadRequest(roleResult.Errors);
@@ -43,22 +42,22 @@ namespace NewsSync.API.Controllers
             return Ok("User was registered. Please log in.");
         }
 
-        // POST: api/auth/login
-        [HttpPost("Login")]
+        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
         {
-            var user = await userManager.FindByEmailAsync(loginRequestDto.Username);
+            var user = await _userManager.FindByEmailAsync(loginRequestDto.Username);
 
-            if (user == null || !await userManager.CheckPasswordAsync(user, loginRequestDto.Password))
+            if (user == null || !await _userManager.CheckPasswordAsync(user, loginRequestDto.Password))
                 return BadRequest("Invalid email or password");
 
-            var roles = await userManager.GetRolesAsync(user);
-            var token = tokenRepository.CreateJWTToken(user, roles.ToList());
+            var roles = await _userManager.GetRolesAsync(user);
+            var token = _tokenRepository.CreateJWTToken(user, roles.ToList());
 
             return Ok(new LoginResponseDto
             {
                 JwtToken = token,
-                UserId = user.Id
+                UserId = user.Id,
+                Role = roles.FirstOrDefault() ?? "User"
             });
         }
     }

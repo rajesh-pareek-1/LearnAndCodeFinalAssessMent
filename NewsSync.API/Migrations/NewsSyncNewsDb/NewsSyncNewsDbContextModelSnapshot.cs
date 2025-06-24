@@ -22,6 +22,34 @@ namespace NewsSync.API.Migrations.NewsSyncNewsDb
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ArticleReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ArticleId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReportedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArticleId");
+
+                    b.ToTable("ArticleReports");
+                });
+
             modelBuilder.Entity("NewsSync.API.Models.Domain.Article", b =>
                 {
                     b.Property<int>("Id")
@@ -48,6 +76,9 @@ namespace NewsSync.API.Migrations.NewsSyncNewsDb
                     b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Language")
                         .IsRequired()
@@ -80,6 +111,7 @@ namespace NewsSync.API.Migrations.NewsSyncNewsDb
                             Description = "AI is transforming industries.",
                             Headline = "AI Breakthrough",
                             ImageUrl = "https://example.com/img.jpg",
+                            IsBlocked = false,
                             Language = "English",
                             PublishedDate = "2025-06-14",
                             Source = "TechCrunch",
@@ -93,11 +125,40 @@ namespace NewsSync.API.Migrations.NewsSyncNewsDb
                             Description = "Day 1 recap of major events.",
                             Headline = "Olympics 2024 Highlights",
                             ImageUrl = "https://example.com/olympics.jpg",
+                            IsBlocked = false,
                             Language = "English",
                             PublishedDate = "2024-07-25",
                             Source = "ESPN",
                             Url = "https://example.com/olympics"
                         });
+                });
+
+            modelBuilder.Entity("NewsSync.API.Models.Domain.ArticleReaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ArticleId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsLiked")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("ReactedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArticleId");
+
+                    b.ToTable("ArticleReactions");
                 });
 
             modelBuilder.Entity("NewsSync.API.Models.Domain.Category", b =>
@@ -335,6 +396,17 @@ namespace NewsSync.API.Migrations.NewsSyncNewsDb
                         });
                 });
 
+            modelBuilder.Entity("ArticleReport", b =>
+                {
+                    b.HasOne("NewsSync.API.Models.Domain.Article", "Article")
+                        .WithMany()
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Article");
+                });
+
             modelBuilder.Entity("NewsSync.API.Models.Domain.Article", b =>
                 {
                     b.HasOne("NewsSync.API.Models.Domain.Category", "Category")
@@ -344,6 +416,17 @@ namespace NewsSync.API.Migrations.NewsSyncNewsDb
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("NewsSync.API.Models.Domain.ArticleReaction", b =>
+                {
+                    b.HasOne("NewsSync.API.Models.Domain.Article", "Article")
+                        .WithMany()
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Article");
                 });
 
             modelBuilder.Entity("NewsSync.API.Models.Domain.Notification", b =>

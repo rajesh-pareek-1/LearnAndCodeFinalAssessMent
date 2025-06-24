@@ -1,13 +1,19 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NewsSync.API.Data;
+using NewsSync.API.Data.Seed;
+using NewsSync.API.Mappings;
+using NewsSync.API.Middleware;
+using NewsSync.API.Models.Domain;
 using NewsSync.API.Repositories;
 using NewsSync.API.Services;
 using NewsSync.API.Services.Notification;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +81,17 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequiredUniqueChars = 1;
 });
 
+// Setup Serilog
+var logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("Logs/app_log.txt", rollingInterval: RollingInterval.Day)
+    .MinimumLevel.Information()
+    .CreateLogger();
+
+builder.Logging.ClearProviders();
+builder.Logging.AddSerilog(logger);
+
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -103,7 +120,7 @@ builder.Services.AddControllers()
 
 // Register your custom services
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<NewsSync.API.Services.INotificationService, NotificationService>();
 
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IAdminService, AdminService>();
@@ -125,6 +142,15 @@ builder.Services.AddHostedService<NewsFetcherBackgroundService>();
 
 builder.Services.AddScoped<NewsSync.API.Services.Notification.INotificationService, EmailNotificationService>();
 
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IArticleCategoryService, ArticleCategoryService>();
+
+builder.Services.AddScoped<IArticleReactionRepository, ArticleReactionRepository>();
+builder.Services.AddScoped<IArticleReactionService, ArticleReactionService>();
+
+builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
+
+
 
 var app = builder.Build();
 
@@ -136,6 +162,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
