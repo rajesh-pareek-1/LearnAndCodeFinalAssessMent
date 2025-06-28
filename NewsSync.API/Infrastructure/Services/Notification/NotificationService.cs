@@ -1,61 +1,98 @@
-using NewsSync.API.Models;
 using NewsSync.API.Domain.Entities;
 using NewsSync.API.Application.DTOs;
 using NewsSync.API.Application.Interfaces.Repositories;
 using NewsSync.API.Application.Interfaces.Services;
+using NewsSync.API.Domain.Common.Messages;
 
-public class NotificationService : INotificationService
+namespace NewsSync.API.Application.Services
 {
-    private readonly INotificationRepository repo;
-
-    public NotificationService(INotificationRepository repo)
+    public class NotificationService : INotificationService
     {
-        this.repo = repo;
-    }
+        private readonly INotificationRepository notificationRepository;
+        private readonly ILogger<NotificationService> logger;
 
-    public async Task<List<NotificationDto>> GetUserNotificationsAsync(string userId)
-    {
-        var notifications = await repo.GetUserNotificationsAsync(userId);
-
-        return notifications.Select(n => new NotificationDto
+        public NotificationService(INotificationRepository notificationRepository, ILogger<NotificationService> logger)
         {
-            Id = n.Id,
-            SentAt = n.SentAt,
-            Article = new ArticleDto
+            this.notificationRepository = notificationRepository;
+            this.logger = logger;
+        }
+
+        public async Task<List<NotificationDto>> GetUserNotificationsAsync(string userId)
+        {
+            try
             {
-                Id = n.Article.Id,
-                Headline = n.Article.Headline,
-                Description = n.Article.Description,
-                Source = n.Article.Source,
-                Url = n.Article.Url,
-                AuthorName = n.Article.AuthorName,
-                ImageUrl = n.Article.ImageUrl,
-                Language = n.Article.Language,
-                PublishedDate = n.Article.PublishedDate
+                var notifications = await notificationRepository.GetUserNotificationsAsync(userId);
+
+                return notifications.Select(n => new NotificationDto
+                {
+                    Id = n.Id,
+                    SentAt = n.SentAt,
+                    Article = new ArticleDto
+                    {
+                        Id = n.Article.Id,
+                        Headline = n.Article.Headline,
+                        Description = n.Article.Description,
+                        Source = n.Article.Source,
+                        Url = n.Article.Url,
+                        AuthorName = n.Article.AuthorName,
+                        ImageUrl = n.Article.ImageUrl,
+                        Language = n.Article.Language,
+                        PublishedDate = n.Article.PublishedDate
+                    }
+                }).ToList();
             }
-        }).ToList();
-    }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to fetch notifications for user {UserId}", userId);
+                throw new ApplicationException(ValidationMessages.FailedToFetchNotifications, ex);
+            }
+        }
 
-    public Task<List<NotificationConfiguration>> GetSettingsAsync(string userId)
-    {
-        return repo.GetNotificationSettingsAsync(userId);
-    }
+        public async Task<List<NotificationConfiguration>> GetSettingsAsync(string userId)
+        {
+            try
+            {
+                return await notificationRepository.GetNotificationSettingsAsync(userId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to get notification settings for user {UserId}", userId);
+                throw new ApplicationException(ValidationMessages.FailedToFetchSettings, ex);
+            }
+        }
 
-    public async Task<bool> UpdateSettingAsync(string userId, string categoryName, bool enabled)
-    {
-        var category = await repo.GetCategoryByNameAsync(categoryName);
-        if (category == null)
-            return false;
+        public async Task<bool> UpdateSettingAsync(string userId, string categoryName, bool enabled)
+        {
+            try
+            {
+                var category = await notificationRepository.GetCategoryByNameAsync(categoryName);
+                if (category == null)
+                    return false;
 
-        var existing = await repo.GetNotificationConfigurationAsync(userId, category.Id);
+                var existingConfig = await notificationRepository.GetNotificationConfigurationAsync(userId, category.Id);
 
-        if (enabled && existing == null)
-            await repo.AddNotificationConfigurationAsync(new NotificationConfiguration { UserId = userId, CategoryId = category.Id });
+                if (enabled && existingConfig == null)
+                {
+                    await notificationRepository.AddNotificationConfigurationAsync(new NotificationConfiguration
+                    {
+                        UserId = userId,
+                        CategoryId = category.Id
+                    });
+                }
 
-        if (!enabled && existing != null)
-            await repo.RemoveNotificationConfigurationAsync(existing);
+                if (!enabled && existingConfig != null)
+                {
+                    await notificationRepository.RemoveNotificationConfigurationAsync(existingConfig);
+                }
 
-        await repo.SaveChangesAsync();
-        return true;
+                await notificationRepository.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to update notification setting for user {UserId}, category {Category}", userId, categoryName);
+                throw new ApplicationException(ValidationMessages.FailedToUpdateNotificationSetting, ex);
+            }
+        }
     }
 }

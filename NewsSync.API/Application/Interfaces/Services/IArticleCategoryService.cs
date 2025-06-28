@@ -1,9 +1,9 @@
-using NewsSync.API.Domain.Entities;
+using NewsSync.API.Application.DTOs;
 
 namespace NewsSync.API.Application.Interfaces.Services
 {
     public interface IArticleCategoryService
     {
-        Task<List<Category>> GetAllCategoriesAsync();
+        Task<List<CategoryResponseDto>> GetAllCategoriesAsync();
     }
 }

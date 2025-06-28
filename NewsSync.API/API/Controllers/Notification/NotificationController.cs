@@ -1,55 +1,60 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NewsSync.API.Models.Contants;
 using NewsSync.API.Application.DTOs;
 using NewsSync.API.Application.Interfaces.Services;
+using NewsSync.API.Domain.Common.Constants;
+using NewsSync.API.Domain.Common.Messages;
 
-namespace NewsSync.API.API.Controllers
+namespace NewsSync.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Roles = RoleNames.User)]
     public class NotificationController : ControllerBase
     {
-        private readonly INotificationService _notificationService;
+        private readonly INotificationService notificationService;
 
-        public NotificationController(INotificationService _notificationService)
+        public NotificationController(INotificationService notificationService)
         {
-            this._notificationService = _notificationService;
+            this.notificationService = notificationService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetUserNotifications([FromQuery] string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
-                return BadRequest("UserId is required.");
+                return BadRequest(ValidationMessages.UserIdRequired);
 
-            var notifications = await _notificationService.GetUserNotificationsAsync(userId);
-            return Ok(notifications);
+            var userNotifications = await notificationService.GetUserNotificationsAsync(userId);
+            return Ok(userNotifications);
         }
 
         [HttpGet("configure")]
-        public async Task<IActionResult> GetNotificationSettings([FromQuery] string userId)
+        public async Task<IActionResult> GetUserNotificationSettings([FromQuery] string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
-                return BadRequest("UserId is required.");
+                return BadRequest(ValidationMessages.UserIdRequired);
 
-            var settings = await _notificationService.GetSettingsAsync(userId);
-            return Ok(settings);
+            var userSettings = await notificationService.GetSettingsAsync(userId);
+            return Ok(userSettings);
         }
 
         [HttpPut("configure")]
-        public async Task<IActionResult> UpdateNotificationSetting([FromBody] NotificationSettingUpdateRequestDto request)
+        public async Task<IActionResult> UpdateUserNotificationSetting([FromBody] NotificationSettingUpdateRequestDto request)
         {
             if (string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.CategoryName))
-                return BadRequest("UserId and CategoryName are required.");
+                return BadRequest(ValidationMessages.UserIdAndCategoryRequired);
 
-            var success = await _notificationService.UpdateSettingAsync(request.UserId, request.CategoryName, request.Enabled);
+            var updateSucceeded = await notificationService.UpdateSettingAsync(
+                request.UserId,
+                request.CategoryName,
+                request.Enabled
+            );
 
-            if (!success)
-                return NotFound("Category not found.");
+            if (!updateSucceeded)
+                return NotFound(ValidationMessages.CategoryNotFound);
 
-            return Ok("Updated successfully.");
+            return Ok(ValidationMessages.UpdateSuccess);
         }
     }
 }

@@ -1,16 +1,21 @@
-using NewsSync.API.Domain.Entities;
 using NewsSync.API.Application.DTOs;
 using NewsSync.API.Application.Interfaces.Repositories;
+using NewsSync.API.Application.Interfaces.Services;
+using NewsSync.API.Domain.Entities;
 
-namespace NewsSync.API.Application.Interfaces.Services
+namespace NewsSync.API.Application.Services
 {
     public class AdminService : IAdminService
     {
-        private readonly IAdminRepository repo;
+        private readonly ICategoryRepository categoryRepository;
+        private readonly IServerRepository serverRepository;
+        private readonly IArticleRepository articleRepository;
 
-        public AdminService(IAdminRepository repo)
+        public AdminService(ICategoryRepository categoryRepository, IServerRepository serverRepository, IArticleRepository articleRepository)
         {
-            this.repo = repo;
+            this.categoryRepository = categoryRepository;
+            this.serverRepository = serverRepository;
+            this.articleRepository = articleRepository;
         }
 
         public async Task AddCategoryAsync(CategoryCreateRequestDto dto)
@@ -20,32 +25,35 @@ namespace NewsSync.API.Application.Interfaces.Services
                 Name = dto.Name,
                 Description = dto.Description
             };
-            await repo.AddCategoryAsync(category);
-            await repo.SaveChangesAsync();
+
+            await categoryRepository.AddAsync(category);
+            await categoryRepository.SaveChangesAsync();
         }
 
         public Task<List<ServerStatusDto>> GetServerStatusAsync()
-            => repo.GetServerStatusAsync();
+            => serverRepository.GetServerStatusAsync();
 
         public Task<List<ServerDetailsDto>> GetServerDetailsAsync()
-            => repo.GetServerDetailsAsync();
+            => serverRepository.GetServerDetailsAsync();
 
         public async Task UpdateServerApiKeyAsync(int serverId, string newApiKey)
         {
-            var server = await repo.GetServerByIdAsync(serverId);
-            if (server == null) throw new Exception("Server not found");
+            var server = await serverRepository.GetByIdAsync(serverId);
+            if (server == null)
+                throw new Exception("Server not found");
+
             server.ApiKey = newApiKey;
-            await repo.SaveChangesAsync();
+            await serverRepository.SaveChangesAsync();
         }
 
         public async Task BlockArticleAsync(int articleId, bool block)
         {
-            var article = await repo.GetArticleByIdAsync(articleId);
-            if (article == null) throw new Exception("Article not found");
+            var article = await articleRepository.GetByIdAsync(articleId);
+            if (article == null)
+                throw new Exception("Article not found");
 
             article.IsBlocked = block;
-            await repo.SaveChangesAsync();
+            await articleRepository.SaveChangesAsync();
         }
-
     }
 }

@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NewsSync.API.Models.Contants;
 using NewsSync.API.Application.DTOs;
 using NewsSync.API.Application.Interfaces.Services;
+using NewsSync.API.Domain.Common.Constants;
+using NewsSync.API.Domain.Common.Messages;
 
-namespace NewsSync.API.API.Controllers
+namespace NewsSync.API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     [Authorize(Roles = RoleNames.User)]
     public class SavedArticleController : ControllerBase
     {
@@ -22,7 +23,7 @@ namespace NewsSync.API.API.Controllers
         public async Task<IActionResult> GetSavedArticles([FromQuery] string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
-                return BadRequest("User ID is required.");
+                return BadRequest(ValidationMessages.UserIdRequired);
 
             var articles = await savedArticleService.GetSavedArticlesForUserAsync(userId);
             return Ok(articles);
@@ -32,30 +33,28 @@ namespace NewsSync.API.API.Controllers
         public async Task<IActionResult> SaveArticle([FromBody] SaveArticleRequestDto request)
         {
             if (string.IsNullOrWhiteSpace(request.UserId) || request.ArticleId <= 0)
-                return BadRequest("Invalid input.");
+                return BadRequest(ValidationMessages.InvalidInput);
 
-            var result = await savedArticleService.SaveArticleAsync(request.UserId, request.ArticleId);
+            var isSaved = await savedArticleService.SaveArticleAsync(request.UserId, request.ArticleId);
 
-            if (!result)
-                return Conflict("Article already saved or not found.");
+            if (!isSaved)
+                return Conflict(ValidationMessages.ArticleAlreadySavedOrNotFound);
 
-            return Ok("Article saved successfully.");
+            return Ok(ValidationMessages.ArticleSavedSuccess);
         }
 
         [HttpDelete]
-        public async Task<IActionResult> DeleteSavedArticle(
-            [FromQuery] string userId,
-            [FromQuery] int articleId)
+        public async Task<IActionResult> DeleteSavedArticle([FromQuery] string userId, [FromQuery] int articleId)
         {
             if (string.IsNullOrWhiteSpace(userId) || articleId <= 0)
-                return BadRequest("Invalid input.");
+                return BadRequest(ValidationMessages.InvalidInput);
 
-            var result = await savedArticleService.DeleteSavedArticleAsync(userId, articleId);
+            var isDeleted = await savedArticleService.DeleteSavedArticleAsync(userId, articleId);
 
-            if (!result)
-                return NotFound("Saved article not found.");
+            if (!isDeleted)
+                return NotFound(ValidationMessages.SavedArticleNotFound);
 
-            return Ok("Saved article deleted successfully.");
+            return Ok(ValidationMessages.SavedArticleDeletedSuccess);
         }
     }
 }

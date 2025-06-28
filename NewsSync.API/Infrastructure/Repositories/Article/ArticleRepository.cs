@@ -58,5 +58,18 @@ namespace NewsSync.API.Application.Interfaces.Repositories
                 .ToListAsync();
         }
 
+        public async Task AddArticlesAsync(List<Article> articles)
+        {
+            await _newsDbContext.Articles.AddRangeAsync(articles);
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _newsDbContext.SaveChangesAsync();
+        }
+        public async Task<Article?> GetByIdAsync(int articleId)
+        {
+            return await _newsDbContext.Articles.FindAsync(articleId);
+        }
     }
 }

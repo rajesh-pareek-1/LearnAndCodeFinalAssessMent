@@ -1,119 +1,111 @@
 using Microsoft.EntityFrameworkCore;
-using NewsSync.API.Domain.Entities;
 using NewsSync.API.Application.Interfaces.Services;
+using NewsSync.API.Domain.Entities;
+using NewsSync.API.Domain.Common.Messages;
 using NewsSync.API.Infrastructure.Data;
 
 public class NewsFetcherBackgroundService : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<NewsFetcherBackgroundService> _logger;
-    private readonly Dictionary<string, INewsAdapter> _adapters;
+    private readonly IServiceScopeFactory scopeFactory;
+    private readonly ILogger<NewsFetcherBackgroundService> logger;
+    private readonly Dictionary<string, INewsAdapter> adapters;
 
-    public NewsFetcherBackgroundService(
-        IServiceScopeFactory scopeFactory,
-        ILogger<NewsFetcherBackgroundService> logger,
-        Dictionary<string, INewsAdapter> adapters)
+    public NewsFetcherBackgroundService(IServiceScopeFactory scopeFactory, ILogger<NewsFetcherBackgroundService> logger, Dictionary<string, INewsAdapter> adapters)
     {
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-        _adapters = adapters;
+        this.scopeFactory = scopeFactory;
+        this.logger = logger;
+        this.adapters = adapters;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        logger.LogInformation("News fetcher started.");
+
         while (!stoppingToken.IsCancellationRequested)
         {
-            await FetchAndStoreArticlesAsync();
+            try
+            {
+                await PerformFetchCycleAsync();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, ValidationMessages.FailedToFetchArticles);
+            }
+
             await Task.Delay(TimeSpan.FromHours(4), stoppingToken);
         }
     }
 
-    private async Task FetchAndStoreArticlesAsync()
+    private async Task PerformFetchCycleAsync()
     {
-        using var scope = _scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<NewsSyncNewsDbContext>();
-        var authDb = scope.ServiceProvider.GetRequiredService<NewsSyncAuthDbContext>();
-        var emailService = scope.ServiceProvider.GetRequiredService<IUserNotificationService>();
+        using var scope = scopeFactory.CreateScope();
+        var newsDb = scope.ServiceProvider.GetRequiredService<NewsSyncNewsDbContext>();
+        var articleStorage = scope.ServiceProvider.GetRequiredService<IArticleStorageService>();
+        var notifier = scope.ServiceProvider.GetRequiredService<IUserArticleNotifierService>();
 
-        var servers = await db.ServerDetails.ToListAsync();
+        var servers = await LoadAllServersAsync(newsDb);
 
         foreach (var server in servers)
         {
-            if (!_adapters.TryGetValue(server.ServerName, out var adapter))
-            {
-                _logger.LogWarning("No adapter found for server: {ServerName}", server.ServerName);
-                continue;
-            }
+            if (!TryGetAdapter(server.ServerName, out var adapter)) continue;
 
-            try
-            {
-                var articles = await adapter.FetchArticlesAsync(server.BaseUrl, server.ApiKey);
-                db.Articles.AddRange(articles);
-                server.LastAccess = DateTime.UtcNow;
-                await db.SaveChangesAsync();
+            var articles = await FetchArticlesAsync(adapter, server);
+            if (!articles.Any()) continue;
 
-                _logger.LogInformation("Fetched {Count} articles from {Server}", articles.Count, server.ServerName);
-                //await NotifyUsersAsync(db, authDb, emailService, articles);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to fetch articles from {Server}", server.ServerName);
-            }
+            await StoreArticlesAsync(articleStorage, server, articles);
+            await NotifyUsersAsync(notifier, articles);
         }
     }
 
-    private async Task NotifyUsersAsync(
-        NewsSyncNewsDbContext newsDb,
-        NewsSyncAuthDbContext authDb,
-        IUserNotificationService emailService,
-        List<Article> articles)
+    private async Task<List<ServerDetail>> LoadAllServersAsync(NewsSyncNewsDbContext dbContext)
     {
-        var groupedByCategory = articles
-            .Where(a => a.CategoryId != 0)
-            .GroupBy(a => a.CategoryId);
+        return await dbContext.ServerDetails.ToListAsync();
+    }
 
-        foreach (var group in groupedByCategory)
+    private bool TryGetAdapter(string serverName, out INewsAdapter adapter)
+    {
+        if (adapters.TryGetValue(serverName, out adapter)) return true;
+
+        logger.LogWarning("No adapter configured for server: {Server}", serverName);
+        return false;
+    }
+
+    private async Task<List<Article>> FetchArticlesAsync(INewsAdapter adapter, ServerDetail server)
+    {
+        try
         {
-            var categoryId = group.Key;
-            var articlesInCategory = group.ToList();
+            var articles = await adapter.FetchArticlesAsync(server.BaseUrl, server.ApiKey);
+            logger.LogInformation("Fetched {Count} articles from {Server}", articles.Count, server.ServerName);
+            return articles;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to fetch articles from {Server}", server.ServerName);
+            return new List<Article>();
+        }
+    }
 
-            var userIds = await newsDb.NotificationConfigurations
-                .Where(nc => nc.CategoryId == categoryId)
-                .Select(nc => nc.UserId)
-                .Distinct()
-                .ToListAsync();
+    private async Task StoreArticlesAsync(IArticleStorageService articleStorage, ServerDetail server, List<Article> articles)
+    {
+        try
+        {
+            await articleStorage.StoreArticlesAsync(server, articles);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to store articles for {Server}", server.ServerName);
+        }
+    }
 
-            var emails = await authDb.Users
-                .Where(u => userIds.Contains(u.Id))
-                .Select(u => u.Email)
-                .Where(email => !string.IsNullOrWhiteSpace(email))
-                .Distinct()
-                .ToListAsync();
-
-            foreach (var email in emails)
-            {
-                var body = string.Join("\n\n", articlesInCategory.Select(a =>
-                    $"🔹 {a.Headline}\n{a.Description}\n{a.Url}"));
-
-                await emailService.SendEmailAsync(email, $"📰 New Articles in Category {categoryId}", body);
-                var userId = await authDb.Users
-                    .Where(u => u.Email == email)
-                    .Select(u => u.Id)
-                    .FirstOrDefaultAsync();
-
-                if (!string.IsNullOrWhiteSpace(userId))
-                {
-                    var notifications = articlesInCategory.Select(article => new Notification
-                    {
-                        ArticleId = article.Id,
-                        UserId = userId,
-                        SentAt = DateTime.UtcNow
-                    }).ToList();
-
-                    newsDb.Notifications.AddRange(notifications);
-                    await newsDb.SaveChangesAsync();
-                }
-            }
+    private async Task NotifyUsersAsync(IUserArticleNotifierService notifier, List<Article> articles)
+    {
+        try
+        {
+            await notifier.NotifyUsersAsync(articles);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to notify users for articles");
         }
     }
 }

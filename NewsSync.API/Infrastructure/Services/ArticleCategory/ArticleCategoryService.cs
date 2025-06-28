@@ -1,20 +1,40 @@
-using NewsSync.API.Domain.Entities;
+using NewsSync.API.Application.DTOs;
 using NewsSync.API.Application.Interfaces.Repositories;
+using NewsSync.API.Application.Interfaces.Services;
 
-namespace NewsSync.API.Application.Interfaces.Services
+namespace NewsSync.API.Application.Services
 {
     public class ArticleCategoryService : IArticleCategoryService
     {
-        private readonly ICategoryRepository repo;
+        private readonly ICategoryRepository categoryRepository;
+        private readonly ILogger<ArticleCategoryService> logger;
 
-        public ArticleCategoryService(ICategoryRepository repo)
+        public ArticleCategoryService(ICategoryRepository categoryRepository, ILogger<ArticleCategoryService> logger)
         {
-            this.repo = repo;
+            this.categoryRepository = categoryRepository;
+            this.logger = logger;
         }
 
-        public Task<List<Category>> GetAllCategoriesAsync()
+        public async Task<List<CategoryResponseDto>> GetAllCategoriesAsync()
         {
-            return repo.GetAllAsync();
+            var categories = await categoryRepository.GetAllAsync();
+
+            if (categories == null || !categories.Any())
+            {
+                logger.LogWarning("No categories found in the database.");
+                return [];
+            }
+
+            logger.LogInformation("Fetched {Count} categories from database.", categories.Count);
+
+            return categories
+                .Select(c => new CategoryResponseDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description
+                })
+                .ToList();
         }
     }
 }

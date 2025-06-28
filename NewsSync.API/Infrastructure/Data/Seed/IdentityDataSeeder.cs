@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Identity;
 using NewsSync.API.Domain.Common.Constants;
-using NewsSync.API.Models.Contants;
 using NewsSync.API.Domain.Entities;
 
 namespace NewsSync.API.Infrastructure.Data.Seed

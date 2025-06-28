@@ -17,5 +17,15 @@ namespace NewsSync.API.Application.Interfaces.Repositories
         {
             return await _newsDbContext.Categories.ToListAsync();
         }
+
+        public async Task AddAsync(Category category)
+        {
+            await _newsDbContext.Categories.AddAsync(category);
+        }
+
+        public Task SaveChangesAsync()
+        {
+            return _newsDbContext.SaveChangesAsync();
+        }
     }
 }

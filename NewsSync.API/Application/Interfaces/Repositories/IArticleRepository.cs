@@ -7,7 +7,9 @@ namespace NewsSync.API.Application.Interfaces.Repositories
     {
         Task<List<Article>> GetAllAsync();
         Task SubmitReportAsync(ReportDto dto);
-         Task<List<ArticleReport>> GetReportsByArticleAsync(int articleId);
-
+        Task<List<ArticleReport>> GetReportsByArticleAsync(int articleId);
+        Task AddArticlesAsync(List<Article> articles);
+        Task SaveChangesAsync();
+        Task<Article?> GetByIdAsync(int articleId);
     }
 }
