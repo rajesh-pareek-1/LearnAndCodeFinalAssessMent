@@ -3,53 +3,78 @@ using NewsSync.API.Domain.Entities;
 using NewsSync.API.Application.Interfaces.Repositories;
 using NewsSync.API.Infrastructure.Data;
 
-public class NotificationRepository : INotificationRepository
+namespace NewsSync.API.Infrastructure.Repositories
 {
-    private readonly NewsSyncNewsDbContext _newsDbContext;
-
-    public NotificationRepository(NewsSyncNewsDbContext _newsDbContext)
+    public class NotificationRepository : INotificationRepository
     {
-        this._newsDbContext = _newsDbContext;
-    }
+        private readonly NewsSyncNewsDbContext db;
 
-    public async Task<List<Notification>> GetUserNotificationsAsync(string userId)
-    {
-        return await _newsDbContext.Notifications
-            .Include(n => n.Article)
-            .Where(n => n.UserId == userId)
-            .OrderByDescending(n => n.SentAt)
-            .ToListAsync();
-    }
+        public NotificationRepository(NewsSyncNewsDbContext db)
+        {
+            this.db = db;
+        }
 
-    public async Task<List<NotificationConfiguration>> GetNotificationSettingsAsync(string userId)
-    {
-        return await _newsDbContext.NotificationConfigurations
-            .Include(nc => nc.Category)
-            .Where(nc => nc.UserId == userId)
-            .ToListAsync();
-    }
+        public async Task<List<Notification>> GetUserNotificationsAsync(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
 
-    public async Task AddNotificationConfigurationAsync(NotificationConfiguration config)
-    {
-        await _newsDbContext.NotificationConfigurations.AddAsync(config);
-    }
+            return await db.Notifications
+                .Include(n => n.Article)
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.SentAt)
+                .ToListAsync();
+        }
 
-    public Task RemoveNotificationConfigurationAsync(NotificationConfiguration config)
-    {
-        _newsDbContext.NotificationConfigurations.Remove(config);
-        return Task.CompletedTask;
-    }
+        public async Task<List<NotificationConfiguration>> GetNotificationSettingsAsync(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
 
-    public async Task<NotificationConfiguration?> GetNotificationConfigurationAsync(string userId, int categoryId)
-    {
-        return await _newsDbContext.NotificationConfigurations
-            .FirstOrDefaultAsync(nc => nc.UserId == userId && nc.CategoryId == categoryId);
-    }
+            return await db.NotificationConfigurations
+                .Include(nc => nc.Category)
+                .Where(nc => nc.UserId == userId)
+                .ToListAsync();
+        }
 
-    public async Task<Category?> GetCategoryByNameAsync(string categoryName)
-    {
-        return await _newsDbContext.Categories.FirstOrDefaultAsync(c => c.Name.ToLower() == categoryName.ToLower());
-    }
+        public async Task AddNotificationConfigurationAsync(NotificationConfiguration config)
+        {
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
 
-    public Task SaveChangesAsync() => _newsDbContext.SaveChangesAsync();
+            await db.NotificationConfigurations.AddAsync(config);
+        }
+
+        public Task RemoveNotificationConfigurationAsync(NotificationConfiguration config)
+        {
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
+
+            db.NotificationConfigurations.Remove(config);
+            return Task.CompletedTask;
+        }
+
+        public async Task<NotificationConfiguration?> GetNotificationConfigurationAsync(string userId, int categoryId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
+
+            return await db.NotificationConfigurations
+                .FirstOrDefaultAsync(nc => nc.UserId == userId && nc.CategoryId == categoryId);
+        }
+
+        public async Task<Category?> GetCategoryByNameAsync(string categoryName)
+        {
+            if (string.IsNullOrWhiteSpace(categoryName))
+                throw new ArgumentException("Category name cannot be null or empty.", nameof(categoryName));
+
+            return await db.Categories
+                .FirstOrDefaultAsync(c => c.Name.ToLower() == categoryName.ToLower());
+        }
+
+        public Task SaveChangesAsync()
+        {
+            return db.SaveChangesAsync();
+        }
+    }
 }

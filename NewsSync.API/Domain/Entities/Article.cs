@@ -7,10 +7,10 @@ namespace NewsSync.API.Domain.Entities
     {
         [Key]
         public int Id { get; set; }
-        public bool IsBlocked { get; set; } = false; ///default 0 to all
+        public bool IsBlocked { get; set; } = false;
 
         [Required]
-        public string Headline { get; set; } = string.Empty; 
+        public string Headline { get; set; } = string.Empty;
 
         [Required]
         public string Description { get; set; } = string.Empty;

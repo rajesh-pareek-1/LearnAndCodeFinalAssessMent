@@ -1,57 +1,62 @@
 using Microsoft.EntityFrameworkCore;
 using NewsSync.API.Domain.Entities;
 using NewsSync.API.Application.DTOs;
+using NewsSync.API.Application.Interfaces.Repositories;
 using NewsSync.API.Infrastructure.Data;
 
-namespace NewsSync.API.Application.Interfaces.Repositories
+namespace NewsSync.API.Infrastructure.Repositories
 {
     public class ArticleReactionRepository : IArticleReactionRepository
     {
-        private readonly NewsSyncNewsDbContext _db;
+        private readonly NewsSyncNewsDbContext db;
 
         public ArticleReactionRepository(NewsSyncNewsDbContext db)
         {
-            _db = db;
+            this.db = db;
         }
 
         public async Task AddOrUpdateReactionAsync(ReactionRequestDto dto)
         {
-            var existing = await _db.ArticleReactions
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            var existingReaction = await db.ArticleReactions
                 .FirstOrDefaultAsync(r => r.ArticleId == dto.ArticleId && r.UserId == dto.UserId);
 
-            if (existing != null)
+            if (existingReaction != null)
             {
-                if (existing.IsLiked == dto.IsLiked)
+                if (existingReaction.IsLiked == dto.IsLiked)
                 {
-                    // Same reaction submitted again, so remove (toggle off)
-                    _db.ArticleReactions.Remove(existing);
+                    db.ArticleReactions.Remove(existingReaction);
                 }
                 else
                 {
-                    // Opposite reaction submitted, so update
-                    existing.IsLiked = dto.IsLiked;
-                    existing.ReactedAt = DateTime.UtcNow;
+                    existingReaction.IsLiked = dto.IsLiked;
+                    existingReaction.ReactedAt = DateTime.UtcNow;
                 }
             }
             else
             {
-                // No reaction yet, add new
-                await _db.ArticleReactions.AddAsync(new ArticleReaction
+                var newReaction = new ArticleReaction
                 {
                     ArticleId = dto.ArticleId,
                     UserId = dto.UserId,
                     IsLiked = dto.IsLiked,
                     ReactedAt = DateTime.UtcNow
-                });
+                };
+
+                await db.ArticleReactions.AddAsync(newReaction);
             }
 
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
         }
-
 
         public async Task<List<ArticleReaction>> GetUserReactionsAsync(string userId, bool? isLiked = null)
         {
-            var query = _db.ArticleReactions
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
+
+            var query = db.ArticleReactions
                 .Include(r => r.Article)
                 .Where(r => r.UserId == userId);
 

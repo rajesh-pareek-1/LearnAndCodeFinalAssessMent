@@ -8,5 +8,4 @@ namespace NewsSync.API.Application.Interfaces.Repositories
         Task AddOrUpdateReactionAsync(ReactionRequestDto dto);
         Task<List<ArticleReaction>> GetUserReactionsAsync(string userId, bool? isLiked = null);
     }
-
 }

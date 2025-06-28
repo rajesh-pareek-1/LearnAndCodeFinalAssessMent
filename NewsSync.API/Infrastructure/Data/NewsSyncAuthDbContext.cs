@@ -13,26 +13,29 @@ namespace NewsSync.API.Infrastructure.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            SeedRoles(builder);
+        }
 
+        private static void SeedRoles(ModelBuilder builder)
+        {
             var roles = new List<IdentityRole>
             {
-                new IdentityRole
-                {
-                    Id = RoleConstants.AdminRoleId,
-                    ConcurrencyStamp = RoleConstants.AdminRoleId,
-                    Name = RoleConstants.AdminRoleName,
-                    NormalizedName = RoleConstants.AdminRoleName.ToUpper()
-                },
-                new IdentityRole
-                {
-                    Id = RoleConstants.UserRoleId,
-                    ConcurrencyStamp = RoleConstants.UserRoleId,
-                    Name = RoleConstants.UserRoleName,
-                    NormalizedName = RoleConstants.UserRoleName.ToUpper()
-                }
+                CreateRole(RoleConstants.AdminRoleId, RoleConstants.AdminRoleName),
+                CreateRole(RoleConstants.UserRoleId, RoleConstants.UserRoleName)
             };
 
             builder.Entity<IdentityRole>().HasData(roles);
+        }
+
+        private static IdentityRole CreateRole(string id, string name)
+        {
+            return new IdentityRole
+            {
+                Id = id,
+                ConcurrencyStamp = id,
+                Name = name,
+                NormalizedName = name.ToUpper()
+            };
         }
     }
 }

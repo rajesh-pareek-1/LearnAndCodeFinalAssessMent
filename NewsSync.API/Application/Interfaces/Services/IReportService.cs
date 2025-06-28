@@ -6,5 +6,4 @@ namespace NewsSync.API.Application.Interfaces.Services
     {
         Task<bool> SubmitReportAsync(ReportDto reportDto);
     }
-
 }

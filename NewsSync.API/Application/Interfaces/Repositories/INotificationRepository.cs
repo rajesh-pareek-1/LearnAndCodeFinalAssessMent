@@ -13,4 +13,3 @@ namespace NewsSync.API.Application.Interfaces.Repositories
         Task SaveChangesAsync();
     }
 }
-

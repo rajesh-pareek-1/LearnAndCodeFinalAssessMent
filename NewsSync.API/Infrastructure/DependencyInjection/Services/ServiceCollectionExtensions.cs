@@ -76,7 +76,7 @@ namespace NewsSync.API.Infrastructure.DependencyInjection
 
             services.Configure<SmtpSettings>(config.GetSection("Email:Smtp"));
             services.AddScoped<IUserNotificationService, EmailNotificationService>();
-    
+
             services.AddHttpClient();
             services.AddSingleton<NewsApiOrgClientAdapter>();
             services.AddSingleton<TheNewsApiClientAdapter>();

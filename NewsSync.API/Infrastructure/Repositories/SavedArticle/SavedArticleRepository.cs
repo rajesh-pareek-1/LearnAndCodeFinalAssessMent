@@ -7,16 +7,19 @@ namespace NewsSync.API.Infrastructure.Repositories
 {
     public class SavedArticleRepository : ISavedArticleRepository
     {
-        private readonly NewsSyncNewsDbContext _newsDbContext;
+        private readonly NewsSyncNewsDbContext db;
 
-        public SavedArticleRepository(NewsSyncNewsDbContext _newsDbContext)
+        public SavedArticleRepository(NewsSyncNewsDbContext db)
         {
-            this._newsDbContext = _newsDbContext;
+            this.db = db;
         }
 
         public async Task<List<Article>> GetSavedArticlesByUserIdAsync(string userId)
         {
-            return await _newsDbContext.SavedArticles
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
+
+            return await db.SavedArticles
                 .Include(sa => sa.Article)
                 .Where(sa => sa.UserId == userId)
                 .Select(sa => sa.Article)
@@ -25,40 +28,42 @@ namespace NewsSync.API.Infrastructure.Repositories
 
         public async Task<bool> IsArticleAlreadySavedAsync(string userId, int articleId)
         {
-            return await _newsDbContext.SavedArticles
+            return await db.SavedArticles
                 .AnyAsync(sa => sa.UserId == userId && sa.ArticleId == articleId);
         }
 
         public async Task<bool> DoesArticleExistAsync(int articleId)
         {
-            return await _newsDbContext.Articles.AnyAsync(a => a.Id == articleId);
+            return await db.Articles.AnyAsync(a => a.Id == articleId);
         }
 
         public async Task SaveAsync(string userId, int articleId)
         {
+            if (await IsArticleAlreadySavedAsync(userId, articleId))
+                return;
+
             var savedArticle = new SavedArticle
             {
                 UserId = userId,
                 ArticleId = articleId
             };
 
-            _newsDbContext.SavedArticles.Add(savedArticle);
-            await _newsDbContext.SaveChangesAsync();
-
+            await db.SavedArticles.AddAsync(savedArticle);
+            await db.SaveChangesAsync();
         }
 
         public async Task<bool> DeleteSavedArticleAsync(string userId, int articleId)
         {
-            var savedArticle = await _newsDbContext.SavedArticles
+            var savedArticle = await db.SavedArticles
                 .FirstOrDefaultAsync(sa => sa.UserId == userId && sa.ArticleId == articleId);
 
             if (savedArticle == null)
                 return false;
 
-            _newsDbContext.SavedArticles.Remove(savedArticle);
-            await _newsDbContext.SaveChangesAsync();
+            db.SavedArticles.Remove(savedArticle);
+            await db.SaveChangesAsync();
+
             return true;
         }
-
     }
 }

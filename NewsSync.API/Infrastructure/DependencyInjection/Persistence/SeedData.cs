@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 using NewsSync.API.Infrastructure.Data.Seed;
 
 namespace NewsSync.API.Infrastructure.DependencyInjection
@@ -10,7 +8,9 @@ namespace NewsSync.API.Infrastructure.DependencyInjection
         {
             using var scope = app.Services.CreateScope();
             var services = scope.ServiceProvider;
-            await IdentityDataSeeder.SeedUsersAndRolesAsync(services);
+
+            var seeder = services.GetRequiredService<IdentityDataSeeder>();
+            await seeder.SeedAsync();
         }
     }
 }

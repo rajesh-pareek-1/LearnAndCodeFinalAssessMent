@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Identity;
 using NewsSync.API.Domain.Entities;
 
 namespace NewsSync.API.Application.Interfaces.Repositories

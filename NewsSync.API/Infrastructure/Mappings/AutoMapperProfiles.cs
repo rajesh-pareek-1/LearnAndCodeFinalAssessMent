@@ -4,7 +4,6 @@ using NewsSync.API.Application.DTOs;
 
 namespace NewsSync.API.Infrastructure.Mappings
 {
-
     public class AutoMapperProfiles : Profile
     {
         public AutoMapperProfiles()

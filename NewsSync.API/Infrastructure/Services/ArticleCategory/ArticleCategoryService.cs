@@ -33,8 +33,7 @@ namespace NewsSync.API.Application.Services
                     Id = c.Id,
                     Name = c.Name,
                     Description = c.Description
-                })
-                .ToList();
+                }).ToList();
         }
     }
 }

@@ -1,75 +1,87 @@
 using Microsoft.EntityFrameworkCore;
-using NewsSync.API.Domain.Entities;
 using NewsSync.API.Application.DTOs;
+using NewsSync.API.Application.Interfaces.Repositories;
+using NewsSync.API.Domain.Entities;
 using NewsSync.API.Infrastructure.Data;
 
-namespace NewsSync.API.Application.Interfaces.Repositories
+namespace NewsSync.API.Infrastructure.Repositories
 {
     public class ArticleRepository : IArticleRepository
     {
-        private readonly NewsSyncNewsDbContext _newsDbContext;
+        private readonly NewsSyncNewsDbContext db;
 
-        public ArticleRepository(NewsSyncNewsDbContext _newsDbContext)
+        public ArticleRepository(NewsSyncNewsDbContext db)
         {
-            this._newsDbContext = _newsDbContext;
+            this.db = db;
         }
 
         public async Task<List<Article>> GetAllAsync()
         {
-            return await _newsDbContext.Articles.Where(a => !a.IsBlocked).ToListAsync();
+            return await db.Articles
+                .Where(a => !a.IsBlocked)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-        public async Task SubmitReportAsync(ReportDto dto)
+        public async Task<Article?> GetByIdAsync(int articleId)
         {
-            var alreadyReported = await _newsDbContext.ArticleReports
-                .AnyAsync(r => r.ArticleId == dto.ArticleId && r.ReportedByUserId == dto.UserId);
-
-            if (alreadyReported)
-                throw new Exception("You have already reported this article.");
-
-            var report = new ArticleReport
-            {
-                ArticleId = dto.ArticleId,
-                ReportedByUserId = dto.UserId,
-                Reason = dto.Reason
-            };
-
-            await _newsDbContext.ArticleReports.AddAsync(report);
-
-            var totalReports = await _newsDbContext.ArticleReports
-                .CountAsync(r => r.ArticleId == dto.ArticleId);
-
-            if (totalReports + 1 >= 3)
-            {
-                var article = await _newsDbContext.Articles.FindAsync(dto.ArticleId);
-                if (article != null && !article.IsBlocked)
-                {
-                    article.IsBlocked = true;
-                }
-            }
-
-            await _newsDbContext.SaveChangesAsync();
+            return await db.Articles.FindAsync(articleId);
         }
 
         public async Task<List<ArticleReport>> GetReportsByArticleAsync(int articleId)
         {
-            return await _newsDbContext.ArticleReports
+            return await db.ArticleReports
                 .Where(r => r.ArticleId == articleId)
+                .AsNoTracking()
                 .ToListAsync();
         }
 
         public async Task AddArticlesAsync(List<Article> articles)
         {
-            await _newsDbContext.Articles.AddRangeAsync(articles);
+            await db.Articles.AddRangeAsync(articles);
         }
 
-        public async Task SaveChangesAsync()
+        public async Task SubmitReportAsync(ReportDto dto)
         {
-            await _newsDbContext.SaveChangesAsync();
+            if (await HasUserAlreadyReported(dto.ArticleId, dto.UserId))
+                throw new InvalidOperationException("You have already reported this article.");
+
+            await db.ArticleReports.AddAsync(new ArticleReport
+            {
+                ArticleId = dto.ArticleId,
+                ReportedByUserId = dto.UserId,
+                Reason = dto.Reason
+            });
+
+            await EvaluateAutoBlockAsync(dto.ArticleId);
+
+            await db.SaveChangesAsync();
         }
-        public async Task<Article?> GetByIdAsync(int articleId)
+
+        public Task SaveChangesAsync()
         {
-            return await _newsDbContext.Articles.FindAsync(articleId);
+            return db.SaveChangesAsync();
+        }
+
+        private async Task<bool> HasUserAlreadyReported(int articleId, string userId)
+        {
+            return await db.ArticleReports
+                .AnyAsync(r => r.ArticleId == articleId && r.ReportedByUserId == userId);
+        }
+
+        private async Task EvaluateAutoBlockAsync(int articleId)
+        {
+            var reportCount = await db.ArticleReports
+                .CountAsync(r => r.ArticleId == articleId);
+
+            if (reportCount >= 3)
+            {
+                var article = await db.Articles.FindAsync(articleId);
+                if (article is not null && !article.IsBlocked)
+                {
+                    article.IsBlocked = true;
+                }
+            }
         }
     }
 }

@@ -9,6 +9,5 @@ namespace NewsSync.API.Application.Interfaces.Services
         Task<List<ServerDetailsDto>> GetServerDetailsAsync();
         Task UpdateServerApiKeyAsync(int serverId, string newApiKey);
         Task BlockArticleAsync(int articleId, bool block);
-
     }
 }
