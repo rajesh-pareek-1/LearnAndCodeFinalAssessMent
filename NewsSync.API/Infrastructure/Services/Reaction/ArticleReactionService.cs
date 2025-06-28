@@ -1,27 +1,47 @@
 using NewsSync.API.Domain.Entities;
 using NewsSync.API.Application.DTOs;
 using NewsSync.API.Application.Interfaces.Repositories;
+using NewsSync.API.Application.Interfaces.Services;
+using NewsSync.API.Domain.Common.Messages;
 
-namespace NewsSync.API.Application.Interfaces.Services
+namespace NewsSync.API.Application.Services
 {
     public class ArticleReactionService : IArticleReactionService
     {
-        private readonly IArticleReactionRepository _reactionRepo;
+        private readonly IArticleReactionRepository reactionRepository;
+        private readonly ILogger<ArticleReactionService> logger;
 
-        public ArticleReactionService(IArticleReactionRepository reactionRepo)
+        public ArticleReactionService(IArticleReactionRepository reactionRepository, ILogger<ArticleReactionService> logger)
         {
-            _reactionRepo = reactionRepo;
+            this.reactionRepository = reactionRepository;
+            this.logger = logger;
         }
 
         public async Task SubmitReactionAsync(ReactionRequestDto dto)
         {
-            await _reactionRepo.AddOrUpdateReactionAsync(dto);
+            try
+            {
+                await reactionRepository.AddOrUpdateReactionAsync(dto);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to submit reaction for user {UserId} on article {ArticleId}", dto.UserId, dto.ArticleId);
+                throw new ApplicationException(ValidationMessages.FailedToSubmitReaction, ex);
+            }
         }
 
         public async Task<List<Article>> GetReactionsForUserAsync(string userId, bool? isLiked = null)
         {
-            var reactions = await _reactionRepo.GetUserReactionsAsync(userId, isLiked);
-            return reactions.Select(r => r.Article).ToList();
+            try
+            {
+                var reactions = await reactionRepository.GetUserReactionsAsync(userId, isLiked);
+                return reactions.Select(r => r.Article).ToList();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to fetch reactions for user {UserId} with like filter {IsLiked}", userId, isLiked);
+                throw new ApplicationException(ValidationMessages.FailedToFetchReactions, ex);
+            }
         }
     }
 }

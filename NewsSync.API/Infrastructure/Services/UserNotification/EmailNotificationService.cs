@@ -1,43 +1,49 @@
 using System.Net;
 using System.Net.Mail;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using NewsSync.API.Application.Interfaces.Services;
+using NewsSync.API.Domain.Common.Messages;
+using NewsSync.API.Infrastructure.Configurations;
 
-namespace NewsSync.API.Application.Interfaces.Services
+namespace NewsSync.API.Application.Services
 {
     public class EmailNotificationService : IUserNotificationService
     {
-        private readonly IConfiguration _configuration;
+        private readonly SmtpSettings smtpSettings;
+        private readonly ILogger<EmailNotificationService> logger;
 
-        public EmailNotificationService(IConfiguration configuration)
+        public EmailNotificationService(IOptions<SmtpSettings> smtpOptions, ILogger<EmailNotificationService> logger)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            this.smtpSettings = smtpOptions?.Value ?? throw new ArgumentNullException(nameof(smtpOptions));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var smtpHost = _configuration["Email:Smtp:Host"]
-                ?? throw new InvalidOperationException("SMTP host configuration is missing.");
-
-            var smtpPortString = _configuration["Email:Smtp:Port"];
-            if (!int.TryParse(smtpPortString, out int smtpPort))
-                throw new InvalidOperationException("SMTP port configuration is invalid or missing.");
-
-            var smtpUser = _configuration["Email:Smtp:Username"]
-                ?? throw new InvalidOperationException("SMTP username is missing.");
-            var smtpPass = _configuration["Email:Smtp:Password"]
-                ?? throw new InvalidOperationException("SMTP password is missing.");
-            var fromEmail = _configuration["Email:From"]
-                ?? throw new InvalidOperationException("From email address is missing.");
-
-            using var smtpClient = new SmtpClient(smtpHost, smtpPort)
+            if (string.IsNullOrWhiteSpace(toEmail) || string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(body))
             {
-                EnableSsl = true,
-                Credentials = new NetworkCredential(smtpUser, smtpPass)
-            };
+                logger.LogWarning("Email not sent. Invalid input.");
+                throw new ArgumentException(ValidationMessages.InvalidEmailInput);
+            }
 
-            using var mail = new MailMessage(fromEmail, toEmail, subject, body);
+            try
+            {
+                using var smtpClient = new SmtpClient(smtpSettings.Host, smtpSettings.Port)
+                {
+                    EnableSsl = true,
+                    Credentials = new NetworkCredential(smtpSettings.Username, smtpSettings.Password)
+                };
 
-            await smtpClient.SendMailAsync(mail);
+                using var mail = new MailMessage(smtpSettings.From, toEmail, subject, body);
+                await smtpClient.SendMailAsync(mail);
+
+                logger.LogInformation("Email sent to {ToEmail}", toEmail);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to send email to {ToEmail}", toEmail);
+                throw new ApplicationException(ValidationMessages.EmailSendFailed, ex);
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-namespace NewsSync.API.Models.Contants
+namespace NewsSync.API.Domain.Common.Constants
 {
     public static class RoleNames
     {

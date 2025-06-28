@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Hosting;
 using NewsSync.API.Middleware;
 
 namespace NewsSync.API.Infrastructure.DependencyInjection

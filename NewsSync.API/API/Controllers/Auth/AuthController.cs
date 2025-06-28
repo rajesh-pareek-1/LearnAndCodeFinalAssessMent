@@ -1,64 +1,69 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using NewsSync.API.Models.Contants;
 using NewsSync.API.Domain.Entities;
 using NewsSync.API.Application.DTOs;
 using NewsSync.API.Application.Interfaces.Repositories;
+using NewsSync.API.Domain.Common.Constants;
+using NewsSync.API.Domain.Common.Messages;
 
-namespace NewsSync.API.API.Controllers
+namespace NewsSync.API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly UserManager<AppUser> _userManager;
-        private readonly ITokenRepository _tokenRepository;
+        private readonly UserManager<AppUser> userManager;
+        private readonly ITokenRepository tokenRepository;
 
-        public AuthController(UserManager<AppUser> _userManager, ITokenRepository _tokenRepository)
+        public AuthController(UserManager<AppUser> userManager, ITokenRepository tokenRepository)
         {
-            this._userManager = _userManager;
-            this._tokenRepository = _tokenRepository;
+            this.userManager = userManager;
+            this.tokenRepository = tokenRepository;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestDto registerRequestDto)
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
-            var appUser = new AppUser
+            if (dto is null || string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
+                return BadRequest(ValidationMessages.InvalidRegistrationInput);
+
+            var user = new AppUser
             {
-                UserName = registerRequestDto.Username,
-                Email = registerRequestDto.Username
+                UserName = dto.Username,
+                Email = dto.Username
             };
 
-            var result = await _userManager.CreateAsync(appUser, registerRequestDto.Password);
+            var creationResult = await userManager.CreateAsync(user, dto.Password);
+            if (!creationResult.Succeeded)
+                return BadRequest(creationResult.Errors);
 
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
+            var roleResult = await userManager.AddToRoleAsync(user, RoleNames.User);
+            if (!roleResult.Succeeded) return BadRequest(roleResult.Errors);
 
-            var roleResult = await _userManager.AddToRoleAsync(appUser, RoleNames.User);
-
-            if (!roleResult.Succeeded)
-                return BadRequest(roleResult.Errors);
-
-            return Ok("User was registered. Please log in.");
+            return Ok(ValidationMessages.UserRegistered);
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
-            var user = await _userManager.FindByEmailAsync(loginRequestDto.Username);
+            if (dto is null || string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
+                return BadRequest(ValidationMessages.InvalidLoginInput);
 
-            if (user == null || !await _userManager.CheckPasswordAsync(user, loginRequestDto.Password))
-                return BadRequest("Invalid email or password");
+            var user = await userManager.FindByEmailAsync(dto.Username);
+            if (user is null || !await userManager.CheckPasswordAsync(user, dto.Password))
+                return BadRequest(ValidationMessages.InvalidCredentials);
 
-            var roles = await _userManager.GetRolesAsync(user);
-            var token = _tokenRepository.CreateJWTToken(user, roles.ToList());
+            var roles = await userManager.GetRolesAsync(user);
+            var token = tokenRepository.CreateJWTToken(user, roles.ToList());
 
-            return Ok(new LoginResponseDto
+            var response = new LoginResponseDto
             {
                 JwtToken = token,
                 UserId = user.Id,
-                Role = roles.FirstOrDefault() ?? "User"
-            });
+                Role = roles.FirstOrDefault() ?? RoleNames.User
+            };
+
+            return Ok(response);
         }
     }
 }

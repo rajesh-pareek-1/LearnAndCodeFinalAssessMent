@@ -1,16 +1,16 @@
-using NewsSync.API.Domain.Entities;
 using NewsSync.API.Application.DTOs;
+using NewsSync.API.Domain.Entities;
 
 namespace NewsSync.API.Application.Interfaces.Repositories
 {
-    public interface IAdminRepository
+    public interface IServerRepository
     {
-        Task AddCategoryAsync(Category category);
         Task<List<ServerStatusDto>> GetServerStatusAsync();
         Task<List<ServerDetailsDto>> GetServerDetailsAsync();
-        Task<ServerDetail?> GetServerByIdAsync(int serverId);
-        Task<Article?> GetArticleByIdAsync(int articleId);
+        Task<ServerDetail?> GetByIdAsync(int id);
+        Task UpdateApiKeyAsync(ServerDetail server, string newKey);
         Task SaveChangesAsync();
+        Task UpdateAsync(ServerDetail server);
     }
 
 }
