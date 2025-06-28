@@ -7,4 +7,3 @@ namespace NewsSync.API.Domain.Entities
         public string DisplayName { get; set; } = string.Empty;
     }
 }
-

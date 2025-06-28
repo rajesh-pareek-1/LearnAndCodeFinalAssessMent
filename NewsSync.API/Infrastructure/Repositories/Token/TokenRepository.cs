@@ -8,53 +8,63 @@ namespace NewsSync.API.Application.Interfaces.Repositories
 {
     public class TokenRepository : ITokenRepository
     {
-        private readonly IConfiguration _configuration;
+        private readonly IConfiguration config;
 
-        public TokenRepository(IConfiguration configuration)
+        public TokenRepository(IConfiguration config)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            this.config = config ?? throw new ArgumentNullException(nameof(config));
         }
 
         public string CreateJWTToken(AppUser user, List<string> roles)
         {
-            if (user == null) throw new ArgumentNullException(nameof(user));
-            if (string.IsNullOrWhiteSpace(user.Email)) throw new ArgumentException("User email cannot be null or empty.", nameof(user.Email));
-            if (roles == null) throw new ArgumentNullException(nameof(roles));
+            ValidateInputs(user, roles);
 
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Email, user.Email)
-            };
-
-            foreach (var role in roles)
-            {
-                if (!string.IsNullOrWhiteSpace(role))
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, role));
-                }
-            }
-
-            var jwtKey = _configuration["Jwt:Key"];
-            var issuer = _configuration["Jwt:Issuer"];
-            var audience = _configuration["Jwt:Audience"];
-
-            if (string.IsNullOrWhiteSpace(jwtKey) || string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
-            {
-                throw new InvalidOperationException("JWT configuration values are missing in appsettings.json");
-            }
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var claims = BuildClaims(user.Email!, roles);
+            var signingCredentials = GetSigningCredentials();
 
             var token = new JwtSecurityToken(
-                issuer,
-                audience,
-                claims,
+                issuer: config["Jwt:Issuer"],
+                audience: config["Jwt:Audience"],
+                claims: claims,
                 expires: DateTime.UtcNow.AddMinutes(15),
-                signingCredentials: credentials
+                signingCredentials: signingCredentials
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private void ValidateInputs(AppUser user, List<string> roles)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            if (string.IsNullOrWhiteSpace(user.Email))
+                throw new ArgumentException("User email cannot be null or empty.", nameof(user.Email));
+
+            if (roles == null)
+                throw new ArgumentNullException(nameof(roles));
+        }
+
+        private List<Claim> BuildClaims(string email, List<string> roles)
+        {
+            var claims = new List<Claim> { new Claim(ClaimTypes.Email, email) };
+
+            foreach (var role in roles.Where(r => !string.IsNullOrWhiteSpace(r)))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            return claims;
+        }
+
+        private SigningCredentials GetSigningCredentials()
+        {
+            var jwtKey = config["Jwt:Key"];
+            var key = string.IsNullOrWhiteSpace(jwtKey)
+                ? throw new InvalidOperationException("JWT secret key is missing in configuration.")
+                : new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+
+            return new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         }
     }
 }

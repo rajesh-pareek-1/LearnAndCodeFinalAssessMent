@@ -11,6 +11,6 @@ namespace NewsSync.API.Domain.Entities
         public string Name { get; set; } = string.Empty;
 
         [Required]
-        public string UserId { get; set; } = string.Empty; 
+        public string UserId { get; set; } = string.Empty;
     }
 }

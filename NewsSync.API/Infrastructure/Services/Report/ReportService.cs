@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NewsSync.API.Application.DTOs;
 using NewsSync.API.Application.Interfaces.Services;
 using NewsSync.API.Domain.Common.Messages;
+using NewsSync.API.Domain.Entities;
 using NewsSync.API.Infrastructure.Data;
 
 namespace NewsSync.API.Application.Services

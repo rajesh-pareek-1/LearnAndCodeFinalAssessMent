@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json.Serialization;
 
 namespace NewsSync.API.Infrastructure.DependencyInjection

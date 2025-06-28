@@ -8,16 +8,19 @@ namespace NewsSync.API.Infrastructure.Repositories
 {
     public class ServerRepository : IServerRepository
     {
-        private readonly NewsSyncNewsDbContext context;
+        private readonly NewsSyncNewsDbContext db;
 
-        public ServerRepository(NewsSyncNewsDbContext context)
+        public ServerRepository(NewsSyncNewsDbContext db)
         {
-            this.context = context;
+            this.db = db;
         }
 
         public async Task<List<ServerStatusDto>> GetServerStatusAsync()
         {
-            var servers = await context.ServerDetails.OrderByDescending(s => s.LastAccess).ToListAsync();
+            var servers = await db.ServerDetails
+                .OrderByDescending(s => s.LastAccess)
+                .ToListAsync();
+
             return servers.Select(s => new ServerStatusDto
             {
                 Uptime = DateTime.UtcNow - s.LastAccess,
@@ -27,7 +30,10 @@ namespace NewsSync.API.Infrastructure.Repositories
 
         public async Task<List<ServerDetailsDto>> GetServerDetailsAsync()
         {
-            var servers = await context.ServerDetails.OrderByDescending(s => s.LastAccess).ToListAsync();
+            var servers = await db.ServerDetails
+                .OrderByDescending(s => s.LastAccess)
+                .ToListAsync();
+
             return servers.Select(s => new ServerDetailsDto
             {
                 Id = s.Id,
@@ -37,21 +43,28 @@ namespace NewsSync.API.Infrastructure.Repositories
         }
 
         public Task<ServerDetail?> GetByIdAsync(int id)
-            => context.ServerDetails.FirstOrDefaultAsync(s => s.Id == id);
+        {
+            return db.ServerDetails.FirstOrDefaultAsync(s => s.Id == id);
+        }
 
         public Task UpdateApiKeyAsync(ServerDetail server, string newKey)
         {
+            if (string.IsNullOrWhiteSpace(newKey))
+                throw new ArgumentException("API key cannot be empty.", nameof(newKey));
+
             server.ApiKey = newKey;
             return Task.CompletedTask;
         }
 
         public Task UpdateAsync(ServerDetail server)
         {
-            context.ServerDetails.Update(server);
+            db.ServerDetails.Update(server);
             return Task.CompletedTask;
         }
-        
-        public Task SaveChangesAsync() => context.SaveChangesAsync();
-    }
 
+        public Task SaveChangesAsync()
+        {
+            return db.SaveChangesAsync();
+        }
+    }
 }
