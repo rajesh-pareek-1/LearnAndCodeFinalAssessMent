@@ -50,7 +50,7 @@ public class NewsFetcherBackgroundService : BackgroundService
             if (!TryGetAdapter(server.ServerName, out var adapter)) continue;
 
             var articles = await FetchArticlesAsync(adapter, server);
-            if (!articles.Any()) continue;
+            if (articles.Count == 0) continue;
 
             await StoreArticlesAsync(articleStorage, server, articles);
             await NotifyUsersAsync(notifier, articles);
@@ -81,7 +81,7 @@ public class NewsFetcherBackgroundService : BackgroundService
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to fetch articles from {Server}", server.ServerName);
-            return new List<Article>();
+            return [];
         }
     }
 

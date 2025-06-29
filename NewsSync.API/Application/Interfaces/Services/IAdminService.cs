@@ -4,7 +4,7 @@ namespace NewsSync.API.Application.Interfaces.Services
 {
     public interface IAdminService
     {
-        Task AddCategoryAsync(CategoryCreateRequestDto dto);
+        Task AddCategoryAsync(CategoryCreateRequestDto categoryCreateRequestDto);
         Task<List<ServerStatusDto>> GetServerStatusAsync();
         Task<List<ServerDetailsDto>> GetServerDetailsAsync();
         Task UpdateServerApiKeyAsync(int serverId, string newApiKey);

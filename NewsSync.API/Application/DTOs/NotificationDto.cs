@@ -1,6 +1,6 @@
 namespace NewsSync.API.Application.DTOs
 {
-    public class NotificationDto
+    public class NotificationResponseDto
     {
         public int Id { get; set; }
         public DateTime SentAt { get; set; }

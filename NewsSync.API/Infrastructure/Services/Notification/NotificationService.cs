@@ -1,8 +1,8 @@
-using NewsSync.API.Domain.Entities;
-using NewsSync.API.Application.DTOs;
+using NewsSync.API.Application.Exceptions;
 using NewsSync.API.Application.Interfaces.Repositories;
 using NewsSync.API.Application.Interfaces.Services;
 using NewsSync.API.Domain.Common.Messages;
+using NewsSync.API.Domain.Entities;
 
 namespace NewsSync.API.Application.Services
 {
@@ -17,29 +17,11 @@ namespace NewsSync.API.Application.Services
             this.logger = logger;
         }
 
-        public async Task<List<NotificationDto>> GetUserNotificationsAsync(string userId)
+        public async Task<List<Notification>> GetUserNotificationsAsync(string userId)
         {
             try
             {
-                var notifications = await notificationRepository.GetUserNotificationsAsync(userId);
-
-                return notifications.Select(n => new NotificationDto
-                {
-                    Id = n.Id,
-                    SentAt = n.SentAt,
-                    Article = new ArticleDto
-                    {
-                        Id = n.Article.Id,
-                        Headline = n.Article.Headline,
-                        Description = n.Article.Description,
-                        Source = n.Article.Source,
-                        Url = n.Article.Url,
-                        AuthorName = n.Article.AuthorName,
-                        ImageUrl = n.Article.ImageUrl,
-                        Language = n.Article.Language,
-                        PublishedDate = n.Article.PublishedDate
-                    }
-                }).ToList();
+                return await notificationRepository.GetUserNotificationsAsync(userId);
             }
             catch (Exception ex)
             {
@@ -65,28 +47,24 @@ namespace NewsSync.API.Application.Services
         {
             try
             {
-                var category = await notificationRepository.GetCategoryByNameAsync(categoryName);
-                if (category == null)
-                    return false;
-
+                var category = await EnsureCategoryExists(categoryName);
                 var existingConfig = await notificationRepository.GetNotificationConfigurationAsync(userId, category.Id);
 
                 if (enabled && existingConfig == null)
                 {
-                    await notificationRepository.AddNotificationConfigurationAsync(new NotificationConfiguration
-                    {
-                        UserId = userId,
-                        CategoryId = category.Id
-                    });
+                    await AddNewConfig(userId, category.Id);
                 }
-
-                if (!enabled && existingConfig != null)
+                else if (!enabled && existingConfig != null)
                 {
-                    await notificationRepository.RemoveNotificationConfigurationAsync(existingConfig);
+                    await RemoveConfig(existingConfig);
                 }
 
                 await notificationRepository.SaveChangesAsync();
                 return true;
+            }
+            catch (CategoryNotFoundException)
+            {
+                return false;
             }
             catch (Exception ex)
             {
@@ -94,5 +72,21 @@ namespace NewsSync.API.Application.Services
                 throw new ApplicationException(ValidationMessages.FailedToUpdateNotificationSetting, ex);
             }
         }
+
+        private async Task<Category> EnsureCategoryExists(string categoryName)
+        {
+            var category = await notificationRepository.GetCategoryByNameAsync(categoryName) ?? throw new CategoryNotFoundException(categoryName);
+            return category;
+        }
+
+        private Task AddNewConfig(string userId, int categoryId) =>
+            notificationRepository.AddNotificationConfigurationAsync(new NotificationConfiguration
+            {
+                UserId = userId,
+                CategoryId = categoryId
+            });
+
+        private Task RemoveConfig(NotificationConfiguration config) =>
+            notificationRepository.RemoveNotificationConfigurationAsync(config);
     }
 }

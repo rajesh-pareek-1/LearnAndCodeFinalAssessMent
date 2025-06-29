@@ -1,3 +1,4 @@
+using AutoMapper;
 using NewsSync.API.Application.DTOs;
 using NewsSync.API.Application.Interfaces.Repositories;
 using NewsSync.API.Application.Interfaces.Services;
@@ -10,21 +11,19 @@ namespace NewsSync.API.Application.Services
         private readonly ICategoryRepository categoryRepository;
         private readonly IServerRepository serverRepository;
         private readonly IArticleRepository articleRepository;
+        private readonly IMapper mapper;
 
-        public AdminService(ICategoryRepository categoryRepository, IServerRepository serverRepository, IArticleRepository articleRepository)
+        public AdminService(ICategoryRepository categoryRepository, IServerRepository serverRepository, IArticleRepository articleRepository, IMapper mapper)
         {
             this.categoryRepository = categoryRepository;
             this.serverRepository = serverRepository;
             this.articleRepository = articleRepository;
+            this.mapper = mapper;
         }
 
-        public async Task AddCategoryAsync(CategoryCreateRequestDto dto)
+        public async Task AddCategoryAsync(CategoryCreateRequestDto categoryCreateRequestDto)
         {
-            var category = new Category
-            {
-                Name = dto.Name,
-                Description = dto.Description
-            };
+            var category = mapper.Map<Category>(categoryCreateRequestDto);
 
             await categoryRepository.AddAsync(category);
             await categoryRepository.SaveChangesAsync();
@@ -38,20 +37,14 @@ namespace NewsSync.API.Application.Services
 
         public async Task UpdateServerApiKeyAsync(int serverId, string newApiKey)
         {
-            var server = await serverRepository.GetByIdAsync(serverId);
-            if (server == null)
-                throw new Exception("Server not found");
-
+            var server = await serverRepository.GetByIdAsync(serverId) ?? throw new Exception("Server not found");
             server.ApiKey = newApiKey;
             await serverRepository.SaveChangesAsync();
         }
 
         public async Task BlockArticleAsync(int articleId, bool block)
         {
-            var article = await articleRepository.GetByIdAsync(articleId);
-            if (article == null)
-                throw new Exception("Article not found");
-
+            var article = await articleRepository.GetByIdAsync(articleId) ?? throw new Exception("Article not found");
             article.IsBlocked = block;
             await articleRepository.SaveChangesAsync();
         }

@@ -5,6 +5,7 @@ using NewsSync.API.Application.DTOs;
 using NewsSync.API.Application.Interfaces.Repositories;
 using NewsSync.API.Domain.Common.Constants;
 using NewsSync.API.Domain.Common.Messages;
+using AutoMapper;
 
 namespace NewsSync.API.Controllers
 {
@@ -14,47 +15,40 @@ namespace NewsSync.API.Controllers
     {
         private readonly UserManager<AppUser> userManager;
         private readonly ITokenRepository tokenRepository;
+        private readonly IMapper mapper;
 
-        public AuthController(UserManager<AppUser> userManager, ITokenRepository tokenRepository)
+        public AuthController(UserManager<AppUser> userManager, ITokenRepository tokenRepository, IMapper mapper)
         {
             this.userManager = userManager;
             this.tokenRepository = tokenRepository;
+            this.mapper = mapper;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDto registerRequestDto)
         {
-            if (dto is null || string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
-                return BadRequest(ValidationMessages.InvalidRegistrationInput);
+            var user = mapper.Map<AppUser>(registerRequestDto);
 
-            var user = new AppUser
-            {
-                UserName = dto.Username,
-                Email = dto.Username
-            };
-
-            var creationResult = await userManager.CreateAsync(user, dto.Password);
+            var creationResult = await userManager.CreateAsync(user, registerRequestDto.Password);
             if (!creationResult.Succeeded)
                 return BadRequest(creationResult.Errors);
 
             var roleResult = await userManager.AddToRoleAsync(user, RoleNames.User);
-            if (!roleResult.Succeeded) return BadRequest(roleResult.Errors);
+            if (!roleResult.Succeeded)
+                return BadRequest(roleResult.Errors);
 
             return Ok(ValidationMessages.UserRegistered);
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
         {
-            if (dto is null || string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
-                return BadRequest(ValidationMessages.InvalidLoginInput);
-
-            var user = await userManager.FindByEmailAsync(dto.Username);
-            if (user is null || !await userManager.CheckPasswordAsync(user, dto.Password))
+            var user = await userManager.FindByEmailAsync(loginRequestDto.Username);
+            if (user is null || !await userManager.CheckPasswordAsync(user, loginRequestDto.Password))
                 return BadRequest(ValidationMessages.InvalidCredentials);
 
             var roles = await userManager.GetRolesAsync(user);
-            var token = tokenRepository.CreateJWTToken(user, roles.ToList());
+            var token = tokenRepository.CreateJWTToken(user, [.. roles]);
 
             var response = new LoginResponseDto
             {

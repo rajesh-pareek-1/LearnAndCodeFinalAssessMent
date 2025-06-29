@@ -9,7 +9,13 @@ namespace NewsSync.API.Infrastructure.Mappings
         public AutoMapperProfiles()
         {
             CreateMap<Article, ArticleDto>().ReverseMap();
+            CreateMap<Article, ArticleResponseDto>();
+
             CreateMap<Category, CategoryCreateRequestDto>().ReverseMap();
+            CreateMap<Category, CategoryResponseDto>();
+
+            CreateMap<Notification, NotificationResponseDto>()
+                .ForMember(dest => dest.Article, opt => opt.MapFrom(src => src.Article));
         }
     }
 }
