@@ -16,6 +16,10 @@ namespace NewsSync.API.Infrastructure.Mappings
 
             CreateMap<Notification, NotificationResponseDto>()
                 .ForMember(dest => dest.Article, opt => opt.MapFrom(src => src.Article));
+
+            CreateMap<RegisterRequestDto, AppUser>()
+               .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Username))
+               .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Username));
         }
     }
 }
