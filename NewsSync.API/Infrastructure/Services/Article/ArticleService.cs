@@ -16,17 +16,17 @@ namespace NewsSync.API.Application.Services
             this.logger = logger;
         }
 
-        public async Task<List<ArticleResponseDto>> GetFilteredArticlesAsync(DateTime? fromDate, DateTime? toDate, string? query)
+        public async Task<List<Article>> GetFilteredArticlesAsync(DateTime? fromDate, DateTime? toDate, string? query)
         {
             var allArticles = await articleRepository.GetAllAsync();
             var filtered = FilterArticles(allArticles, fromDate, toDate, query);
 
             logger.LogInformation("Filtered {Count} articles with from: {From}, to: {To}, query: {Query}", filtered.Count, fromDate?.ToShortDateString(), toDate?.ToShortDateString(), query);
 
-            return MapToDto(filtered);
+            return filtered;
         }
 
-        public async Task<List<ArticleResponseDto>> SearchArticlesAsync(string query)
+        public async Task<List<Article>> SearchArticlesAsync(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
                 return [];
@@ -39,12 +39,12 @@ namespace NewsSync.API.Application.Services
 
             logger.LogInformation("Found {Count} articles matching query: {Query}", matched.Count, query);
 
-            return MapToDto(matched);
+            return matched;
         }
 
-        public Task SubmitReportAsync(ReportDto dto)
+        public Task SubmitReportAsync(ReportDto reportDto)
         {
-            return articleRepository.SubmitReportAsync(dto);
+            return articleRepository.SubmitReportAsync(reportDto);
         }
 
         private static List<Article> FilterArticles(List<Article> articles, DateTime? fromDate, DateTime? toDate, string? query)
@@ -60,26 +60,10 @@ namespace NewsSync.API.Application.Services
             if (!fromDate.HasValue && !toDate.HasValue && string.IsNullOrWhiteSpace(query))
             {
                 var today = DateTime.UtcNow.Date;
-                filtered = articles
-                    .Where(a => DateTime.TryParse(a.PublishedDate, out var publishedDate) && publishedDate.Date == today)
-                    .ToList();
+                filtered = [.. articles.Where(a => DateTime.TryParse(a.PublishedDate, out var publishedDate) && publishedDate.Date == today)];
             }
 
             return filtered;
-        }
-
-        private static List<ArticleResponseDto> MapToDto(List<Article> articles)
-        {
-            return articles.Select(a => new ArticleResponseDto
-            {
-                Id = a.Id,
-                Headline = a.Headline,
-                Description = a.Description,
-                Url = a.Url,
-                PublishedDate = a.PublishedDate,
-                CategoryId = a.CategoryId,
-                IsBlocked = a.IsBlocked
-            }).ToList();
         }
     }
 }

@@ -30,7 +30,7 @@ public class NewsApiOrgClientAdapter : INewsAdapter
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to fetch articles from NewsAPI.org");
-            return new List<Article>();
+            return [];
         }
     }
 
@@ -53,7 +53,7 @@ public class NewsApiOrgClientAdapter : INewsAdapter
             PropertyNameCaseInsensitive = true
         });
 
-        return parsed?.Articles?.Select(MapToArticle).ToList() ?? new List<Article>();
+        return parsed?.Articles?.Select(MapToArticle).ToList() ?? [];
     }
 
     private static Article MapToArticle(NewsApiOrgResponse.NewsApiArticle a)

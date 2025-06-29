@@ -1,3 +1,4 @@
+using AutoMapper;
 using NewsSync.API.Application.DTOs;
 using NewsSync.API.Application.Interfaces.Repositories;
 using NewsSync.API.Application.Interfaces.Services;
@@ -7,11 +8,13 @@ namespace NewsSync.API.Application.Services
     public class ArticleCategoryService : IArticleCategoryService
     {
         private readonly ICategoryRepository categoryRepository;
+        private readonly IMapper mapper;
         private readonly ILogger<ArticleCategoryService> logger;
 
-        public ArticleCategoryService(ICategoryRepository categoryRepository, ILogger<ArticleCategoryService> logger)
+        public ArticleCategoryService(ICategoryRepository categoryRepository, IMapper mapper, ILogger<ArticleCategoryService> logger)
         {
             this.categoryRepository = categoryRepository;
+            this.mapper = mapper;
             this.logger = logger;
         }
 
@@ -19,21 +22,9 @@ namespace NewsSync.API.Application.Services
         {
             var categories = await categoryRepository.GetAllAsync();
 
-            if (categories == null || !categories.Any())
-            {
-                logger.LogWarning("No categories found in the database.");
-                return [];
-            }
-
             logger.LogInformation("Fetched {Count} categories from database.", categories.Count);
 
-            return categories
-                .Select(c => new CategoryResponseDto
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    Description = c.Description
-                }).ToList();
+            return mapper.Map<List<CategoryResponseDto>>(categories);
         }
     }
 }

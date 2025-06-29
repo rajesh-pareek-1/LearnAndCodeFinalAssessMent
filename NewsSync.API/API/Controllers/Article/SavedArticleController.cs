@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewsSync.API.Application.DTOs;
@@ -13,28 +14,24 @@ namespace NewsSync.API.Controllers
     public class SavedArticleController : ControllerBase
     {
         private readonly ISavedArticleService savedArticleService;
+        private readonly IMapper mapper;
 
-        public SavedArticleController(ISavedArticleService savedArticleService)
+        public SavedArticleController(ISavedArticleService savedArticleService, IMapper mapper)
         {
             this.savedArticleService = savedArticleService;
+            this.mapper = mapper;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetSavedArticles([FromQuery] string userId)
         {
-            if (string.IsNullOrWhiteSpace(userId))
-                return BadRequest(ValidationMessages.UserIdRequired);
-
             var articles = await savedArticleService.GetSavedArticlesForUserAsync(userId);
-            return Ok(articles);
+            return Ok(mapper.Map<List<ArticleResponseDto>>(articles));
         }
 
         [HttpPost]
         public async Task<IActionResult> SaveArticle([FromBody] SaveArticleRequestDto request)
         {
-            if (string.IsNullOrWhiteSpace(request.UserId) || request.ArticleId <= 0)
-                return BadRequest(ValidationMessages.InvalidInput);
-
             var isSaved = await savedArticleService.SaveArticleAsync(request.UserId, request.ArticleId);
 
             if (!isSaved)
@@ -46,9 +43,6 @@ namespace NewsSync.API.Controllers
         [HttpDelete]
         public async Task<IActionResult> DeleteSavedArticle([FromQuery] string userId, [FromQuery] int articleId)
         {
-            if (string.IsNullOrWhiteSpace(userId) || articleId <= 0)
-                return BadRequest(ValidationMessages.InvalidInput);
-
             var isDeleted = await savedArticleService.DeleteSavedArticleAsync(userId, articleId);
 
             if (!isDeleted)

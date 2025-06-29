@@ -12,6 +12,8 @@ namespace NewsSync.API.Application.Services
         private readonly NewsSyncNewsDbContext dbContext;
         private readonly ILogger<ReportService> logger;
 
+        private const int ReportThreshold = 3;
+
         public ReportService(NewsSyncNewsDbContext dbContext, ILogger<ReportService> logger)
         {
             this.dbContext = dbContext;
@@ -20,14 +22,14 @@ namespace NewsSync.API.Application.Services
 
         public async Task<bool> SubmitReportAsync(ReportDto dto)
         {
+            if (await IsDuplicateReport(dto.ArticleId, dto.UserId))
+            {
+                logger.LogWarning("Duplicate report by user {UserId} for article {ArticleId}", dto.UserId, dto.ArticleId);
+                throw new InvalidOperationException(ValidationMessages.DuplicateReport);
+            }
+
             try
             {
-                var alreadyReported = await dbContext.ArticleReports
-                    .AnyAsync(r => r.ArticleId == dto.ArticleId && r.ReportedByUserId == dto.UserId);
-
-                if (alreadyReported)
-                    throw new InvalidOperationException(ValidationMessages.DuplicateReport);
-
                 var report = new ArticleReport
                 {
                     ArticleId = dto.ArticleId,
@@ -42,11 +44,6 @@ namespace NewsSync.API.Application.Services
 
                 return true;
             }
-            catch (InvalidOperationException ex)
-            {
-                logger.LogWarning(ex, "Duplicate report by user {UserId} for article {ArticleId}", dto.UserId, dto.ArticleId);
-                throw;
-            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to submit report for article {ArticleId} by user {UserId}", dto.ArticleId, dto.UserId);
@@ -54,21 +51,27 @@ namespace NewsSync.API.Application.Services
             }
         }
 
+        private async Task<bool> IsDuplicateReport(int articleId, string userId)
+        {
+            return await dbContext.ArticleReports
+                .AnyAsync(r => r.ArticleId == articleId && r.ReportedByUserId == userId);
+        }
+
         private async Task BlockArticleIfThresholdReached(int articleId)
         {
             var reportCount = await dbContext.ArticleReports.CountAsync(r => r.ArticleId == articleId);
 
-            if (reportCount >= 3)
-            {
-                var article = await dbContext.Articles.FindAsync(articleId);
+            if (reportCount < ReportThreshold)
+                return;
 
-                if (article is not null && !article.IsBlocked)
-                {
-                    article.IsBlocked = true;
-                    await dbContext.SaveChangesAsync();
-                    logger.LogInformation("Article {ArticleId} blocked after {ReportCount} reports", articleId, reportCount);
-                }
-            }
+            var article = await dbContext.Articles.FindAsync(articleId);
+            if (article is null || article.IsBlocked)
+                return;
+
+            article.IsBlocked = true;
+            await dbContext.SaveChangesAsync();
+
+            logger.LogInformation("Article {ArticleId} blocked after {ReportCount} reports", articleId, reportCount);
         }
     }
 }

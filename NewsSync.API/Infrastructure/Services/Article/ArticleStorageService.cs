@@ -17,7 +17,7 @@ public class ArticleStorageService : IArticleStorageService
 
     public async Task StoreArticlesAsync(ServerDetail server, List<Article> articles)
     {
-        if (articles == null || !articles.Any()) return;
+        if (articles == null || articles.Count == 0) return;
 
         await articleRepository.AddArticlesAsync(articles);
         await articleRepository.SaveChangesAsync();

@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewsSync.API.Application.DTOs;
@@ -14,58 +15,48 @@ namespace NewsSync.API.Controllers
     {
         private readonly IArticleService articleService;
         private readonly IArticleReactionService reactionService;
+        private readonly IMapper mapper;
 
-        public ArticleController(IArticleService articleService, IArticleReactionService reactionService)
+        public ArticleController(IArticleService articleService, IArticleReactionService reactionService, IMapper mapper)
         {
             this.articleService = articleService;
             this.reactionService = reactionService;
+            this.mapper = mapper;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetArticles([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate, [FromQuery] string? query)
         {
             var articles = await articleService.GetFilteredArticlesAsync(fromDate, toDate, query);
-            return Ok(articles);
+            return Ok(mapper.Map<List<ArticleResponseDto>>(articles));
         }
 
         [HttpGet("search")]
         public async Task<IActionResult> SearchArticles([FromQuery] string query)
         {
-            if (string.IsNullOrWhiteSpace(query))
-                return BadRequest(ValidationMessages.SearchQueryRequired);
-
-            var results = await articleService.SearchArticlesAsync(query);
-            return Ok(results);
+            var articles = await articleService.SearchArticlesAsync(query);
+            return Ok(mapper.Map<List<ArticleResponseDto>>(articles));
         }
 
         [HttpPost("report")]
-        public async Task<IActionResult> ReportArticle([FromBody] ReportDto dto)
+        public async Task<IActionResult> ReportArticle([FromBody] ReportDto reportDto)
         {
-            if (dto is null || string.IsNullOrWhiteSpace(dto.UserId) || dto.ArticleId <= 0)
-                return BadRequest(ValidationMessages.InvalidInput);
-
-            await articleService.SubmitReportAsync(dto);
+            await articleService.SubmitReportAsync(reportDto);
             return Ok(ValidationMessages.ReportSubmitted);
         }
 
         [HttpPost("reaction")]
-        public async Task<IActionResult> ReactToArticle([FromBody] ReactionRequestDto dto)
+        public async Task<IActionResult> ReactToArticle([FromBody] ReactionRequestDto reactionRequestDto)
         {
-            if (dto is null || string.IsNullOrWhiteSpace(dto.UserId) || dto.ArticleId <= 0)
-                return BadRequest(ValidationMessages.InvalidInput);
-
-            await reactionService.SubmitReactionAsync(dto);
+            await reactionService.SubmitReactionAsync(reactionRequestDto);
             return Ok(ValidationMessages.ReactionSubmitted);
         }
 
         [HttpGet("reaction/user/{userId}")]
         public async Task<IActionResult> GetUserReactions([FromRoute] string userId, [FromQuery] bool? liked = null)
         {
-            if (string.IsNullOrWhiteSpace(userId))
-                return BadRequest(ValidationMessages.UserIdRequired);
-
             var articles = await reactionService.GetReactionsForUserAsync(userId, liked);
-            return Ok(articles);
+            return Ok(mapper.Map<List<ArticleResponseDto>>(articles));
         }
     }
 }

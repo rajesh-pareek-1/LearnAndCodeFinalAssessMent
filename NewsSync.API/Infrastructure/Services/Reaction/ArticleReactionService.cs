@@ -17,15 +17,15 @@ namespace NewsSync.API.Application.Services
             this.logger = logger;
         }
 
-        public async Task SubmitReactionAsync(ReactionRequestDto dto)
+        public async Task SubmitReactionAsync(ReactionRequestDto reactionRequestDto)
         {
             try
             {
-                await reactionRepository.AddOrUpdateReactionAsync(dto);
+                await reactionRepository.AddOrUpdateReactionAsync(reactionRequestDto);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to submit reaction for user {UserId} on article {ArticleId}", dto.UserId, dto.ArticleId);
+                logger.LogError(ex, "Failed to submit reaction for user {UserId} on article {ArticleId}", reactionRequestDto.UserId, reactionRequestDto.ArticleId);
                 throw new ApplicationException(ValidationMessages.FailedToSubmitReaction, ex);
             }
         }
@@ -35,7 +35,7 @@ namespace NewsSync.API.Application.Services
             try
             {
                 var reactions = await reactionRepository.GetUserReactionsAsync(userId, isLiked);
-                return reactions.Select(r => r.Article).ToList();
+                return [.. reactions.Select(r => r.Article)];
             }
             catch (Exception ex)
             {

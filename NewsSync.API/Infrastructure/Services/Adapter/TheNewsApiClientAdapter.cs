@@ -29,7 +29,7 @@ public class TheNewsApiClientAdapter : INewsAdapter
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to fetch articles from TheNewsAPI");
-            return new List<Article>();
+            return [];
         }
     }
 

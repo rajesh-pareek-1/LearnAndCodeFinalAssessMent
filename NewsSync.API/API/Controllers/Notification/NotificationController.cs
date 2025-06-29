@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewsSync.API.Application.DTOs;
@@ -13,42 +14,35 @@ namespace NewsSync.API.Controllers
     public class NotificationController : ControllerBase
     {
         private readonly INotificationService notificationService;
+        private readonly IMapper mapper;
 
-        public NotificationController(INotificationService notificationService)
+        public NotificationController(INotificationService notificationService, IMapper mapper)
         {
             this.notificationService = notificationService;
+            this.mapper = mapper;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetUserNotifications([FromQuery] string userId)
         {
-            if (string.IsNullOrWhiteSpace(userId))
-                return BadRequest(ValidationMessages.UserIdRequired);
-
             var userNotifications = await notificationService.GetUserNotificationsAsync(userId);
-            return Ok(userNotifications);
+            return Ok(mapper.Map<List<NotificationResponseDto>>(userNotifications));
         }
 
         [HttpGet("configure")]
         public async Task<IActionResult> GetUserNotificationSettings([FromQuery] string userId)
         {
-            if (string.IsNullOrWhiteSpace(userId))
-                return BadRequest(ValidationMessages.UserIdRequired);
-
             var userSettings = await notificationService.GetSettingsAsync(userId);
             return Ok(userSettings);
         }
 
         [HttpPut("configure")]
-        public async Task<IActionResult> UpdateUserNotificationSetting([FromBody] NotificationSettingUpdateRequestDto request)
+        public async Task<IActionResult> UpdateUserNotificationSetting([FromBody] NotificationSettingUpdateRequestDto notificationSettingUpdateRequestDto)
         {
-            if (string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.CategoryName))
-                return BadRequest(ValidationMessages.UserIdAndCategoryRequired);
-
             var updateSucceeded = await notificationService.UpdateSettingAsync(
-                request.UserId,
-                request.CategoryName,
-                request.Enabled
+                notificationSettingUpdateRequestDto.UserId,
+                notificationSettingUpdateRequestDto.CategoryName,
+                notificationSettingUpdateRequestDto.Enabled
             );
 
             if (!updateSucceeded)

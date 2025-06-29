@@ -1,4 +1,3 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewsSync.API.Application.DTOs;
@@ -14,23 +13,16 @@ namespace NewsSync.API.Controllers
     public class AdminController : ControllerBase
     {
         private readonly IAdminService adminService;
-        private readonly IMapper mapper;
-        private readonly ILogger<AdminController> logger;
 
-        public AdminController(IAdminService adminService, ILogger<AdminController> logger, IMapper mapper)
+        public AdminController(IAdminService adminService)
         {
             this.adminService = adminService;
-            this.logger = logger;
-            this.mapper = mapper;
         }
 
         [HttpPost("category")]
-        public async Task<IActionResult> AddCategory([FromBody] CategoryCreateRequestDto dto)
+        public async Task<IActionResult> AddCategory([FromBody] CategoryCreateRequestDto categoryCreateRequestDto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Name))
-                return BadRequest(ValidationMessages.InvalidCategoryInput);
-
-            await adminService.AddCategoryAsync(dto);
+            await adminService.AddCategoryAsync(categoryCreateRequestDto);
             return Ok(ValidationMessages.CategoryAdded);
         }
 
@@ -51,9 +43,6 @@ namespace NewsSync.API.Controllers
         [HttpPut("server/{serverId}")]
         public async Task<IActionResult> UpdateServerApiKey(int serverId, [FromBody] ServerUpdateRequestDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.NewApiKey))
-                return BadRequest(ValidationMessages.InvalidApiKey);
-
             await adminService.UpdateServerApiKeyAsync(serverId, dto.NewApiKey);
             return Ok(ValidationMessages.ServerApiKeyUpdated);
         }
@@ -62,7 +51,6 @@ namespace NewsSync.API.Controllers
         public async Task<IActionResult> BlockArticle(int articleId, [FromQuery] bool block)
         {
             await adminService.BlockArticleAsync(articleId, block);
-
             return Ok(block ? ValidationMessages.ArticleBlocked : ValidationMessages.ArticleUnblocked);
         }
     }
