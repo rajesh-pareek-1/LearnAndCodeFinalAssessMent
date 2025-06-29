@@ -11,6 +11,7 @@ using NewsSync.API.Infrastructure.Data;
 using NewsSync.API.Infrastructure.Repositories;
 using NewsSync.API.Application.Services;
 using NewsSync.API.Infrastructure.Configurations;
+using NewsSync.API.Infrastructure.Data.Seed;
 
 namespace NewsSync.API.Infrastructure.DependencyInjection
 {
@@ -73,9 +74,11 @@ namespace NewsSync.API.Infrastructure.DependencyInjection
 
             services.AddScoped<IArticleReactionRepository, ArticleReactionRepository>();
             services.AddScoped<IArticleReactionService, ArticleReactionService>();
+            services.AddScoped<IArticleStorageService, ArticleStorageService>();
 
             services.Configure<SmtpSettings>(config.GetSection("Email:Smtp"));
             services.AddScoped<IUserNotificationService, EmailNotificationService>();
+            services.AddScoped<IUserArticleNotifierService, UserArticleNotifierService>();
 
             services.AddHttpClient();
             services.AddSingleton<NewsApiOrgClientAdapter>();
@@ -91,6 +94,8 @@ namespace NewsSync.API.Infrastructure.DependencyInjection
 
             services.AddHostedService<NewsFetcherBackgroundService>();
             services.AddAutoMapper(typeof(AutoMapperProfiles));
+
+            services.AddScoped<IdentityDataSeeder>();
 
             return services;
         }
