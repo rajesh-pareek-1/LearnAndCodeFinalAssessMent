@@ -1,39 +1,57 @@
 using System.Net;
+using System.Text.Json;
 
-namespace NewsSync.API.Middleware;
-
-public class GlobalExceptionMiddleware
+namespace NewsSync.API.Middleware
 {
-    private readonly ILogger<GlobalExceptionMiddleware> _logger;
-    private readonly RequestDelegate _next;
-
-    public GlobalExceptionMiddleware(ILogger<GlobalExceptionMiddleware> logger, RequestDelegate next)
+    public class GlobalExceptionMiddleware
     {
-        _logger = logger;
-        _next = next;
-    }
+        private readonly ILogger<GlobalExceptionMiddleware> _logger;
+        private readonly RequestDelegate _next;
 
-    public async Task InvokeAsync(HttpContext context)
-    {
-        try
+        public GlobalExceptionMiddleware(ILogger<GlobalExceptionMiddleware> logger, RequestDelegate next)
         {
-            await _next(context); // Proceed to next middleware or controller
+            _logger = logger;
+            _next = next;
         }
-        catch (Exception ex)
+
+        public async Task InvokeAsync(HttpContext context)
         {
-            var errorId = Guid.NewGuid();
-            _logger.LogError(ex, $"{errorId}: Unhandled exception occurred: {ex.Message}");
-
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            context.Response.ContentType = "application/json";
-
-            var errorResponse = new
+            try
             {
-                ErrorId = errorId,
-                Message = "Something went wrong. Please try again later."
-            };
+                await _next(context);
+            }
+            catch (Exception ex)
+            {
+                var errorId = Guid.NewGuid();
+                _logger.LogError(ex, $"{errorId}: Unhandled exception occurred: {ex.Message}");
 
-            await context.Response.WriteAsJsonAsync(errorResponse);
+                var (statusCode, message) = MapExceptionToResponse(ex);
+
+                context.Response.StatusCode = (int)statusCode;
+                context.Response.ContentType = "application/json";
+
+                var response = new
+                {
+                    ErrorId = errorId,
+                    Message = message,
+                    ExceptionType = ex.GetType().Name
+                };
+
+                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            }
+        }
+
+        private (HttpStatusCode StatusCode, string Message) MapExceptionToResponse(Exception ex)
+        {
+            return ex switch
+            {
+                ArgumentNullException => (HttpStatusCode.BadRequest, ex.Message),
+                ArgumentException => (HttpStatusCode.BadRequest, ex.Message),
+                InvalidOperationException => (HttpStatusCode.BadRequest, ex.Message),
+                UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "Unauthorized access"),
+                KeyNotFoundException => (HttpStatusCode.NotFound, ex.Message),
+                _ => (HttpStatusCode.InternalServerError, "Something went wrong. Please try again later.")
+            };
         }
     }
 }

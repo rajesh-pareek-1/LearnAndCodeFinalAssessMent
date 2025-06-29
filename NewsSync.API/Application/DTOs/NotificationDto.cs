@@ -7,7 +7,3 @@ namespace NewsSync.API.Application.DTOs
         public ArticleDto Article { get; set; } = null!;
     }
 }
-
-
-
-
