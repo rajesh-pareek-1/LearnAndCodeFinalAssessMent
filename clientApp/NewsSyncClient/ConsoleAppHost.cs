@@ -3,10 +3,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NewsSyncClient.Application.Services;
+using NewsSyncClient.Application.UseCases;
 using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Core.Interfaces.Prompts;
+using NewsSyncClient.Core.Interfaces.Renderer;
 using NewsSyncClient.Core.Interfaces.Screens;
 using NewsSyncClient.Core.Interfaces.Services;
+using NewsSyncClient.Core.Interfaces.UseCases;
 using NewsSyncClient.Infrastructure.Security;
+using NewsSyncClient.Presentation.Prompts;
+using NewsSyncClient.Presentation.Renderers;
 using NewsSyncClient.Presentation.Screens;
 
 namespace NewsSyncClient;
@@ -51,6 +57,11 @@ public static class ConsoleAppHost
                 // Article interaction
                 services.AddSingleton<IArticleInteractionService, ArticleInteractionService>();
                 services.AddSingleton<ISavedArticleService, SavedArticleService>();
+
+                // Article use-cases and helpers
+                services.AddSingleton<IFetchHeadlinesUseCase, FetchHeadlinesUseCase>();
+                services.AddSingleton<IArticleRenderer, ArticleRenderer>();
+                services.AddSingleton<IArticleActionPrompt, ArticleActionPrompt>();
 
                 // News & article screens
                 services.AddSingleton<IHeadlinesScreen, HeadlinesScreen>();
