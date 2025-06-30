@@ -19,7 +19,7 @@ public class SavedArticleService : ISavedArticleService
     public async Task<List<ArticleDto>> GetSavedArticlesAsync()
     {
         if (_session.UserId is null)
-            return new();
+            return [];
 
         var response = await _client.GetAsync($"/api/savedArticle?userId={_session.UserId}");
         if (!response.IsSuccessStatusCode)
