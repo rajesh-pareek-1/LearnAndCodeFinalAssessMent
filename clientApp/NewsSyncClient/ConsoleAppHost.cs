@@ -57,6 +57,8 @@ public static class ConsoleAppHost
                 // Article interaction
                 services.AddSingleton<IArticleInteractionService, ArticleInteractionService>();
                 services.AddSingleton<ISavedArticleService, SavedArticleService>();
+                services.AddSingleton<IFetchSavedArticlesUseCase, FetchSavedArticlesUseCase>();
+                services.AddSingleton<ISavedArticlePrompt, SavedArticlePrompt>();
 
                 // Article use-cases and helpers
                 services.AddSingleton<IFetchHeadlinesUseCase, FetchHeadlinesUseCase>();

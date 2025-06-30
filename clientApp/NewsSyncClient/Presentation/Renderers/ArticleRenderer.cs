@@ -15,11 +15,7 @@ public class ArticleRenderer : IArticleRenderer
             Console.WriteLine($"ID          : {article.Id}");
             Console.WriteLine($"Headline    : {article.Headline}");
             Console.WriteLine($"Published   : {article.PublishedDate:dd-MMM-yyyy hh:mm tt}");
-            Console.WriteLine($"Author      : {article.AuthorName ?? "N/A"}");
-            Console.WriteLine($"Source      : {(string.IsNullOrWhiteSpace(article.Source) ? "N/A" : article.Source)}");
-            Console.WriteLine($"URL         : {article.Url}");
-            Console.WriteLine($"Image       : {(string.IsNullOrWhiteSpace(article.ImageUrl) ? "N/A" : article.ImageUrl)}");
-            Console.WriteLine($"Language    : {(string.IsNullOrWhiteSpace(article.Language) ? "N/A" : article.Language)}");
+            Console.WriteLine($"Source         : {article.Url}");
             Console.WriteLine($"Description : {Truncate(article.Description, 160)}");
             Console.WriteLine($"Liked       : {(article.IsLiked ? "Yes" : "No")}   Disliked: {(article.IsDisliked ? "Yes" : "No")}");
             Console.WriteLine(new string('-', 80));
