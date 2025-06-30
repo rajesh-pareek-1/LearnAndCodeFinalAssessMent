@@ -7,38 +7,28 @@ namespace NewsSyncClient.Application.UseCases;
 
 public class FetchHeadlinesUseCase : IFetchHeadlinesUseCase
 {
-    private readonly IArticleInteractionService _articleService;
-    private readonly ISessionContext _session;
+    private readonly IArticleInteractionService _articleInteractionService;
+    private readonly ISessionContext _sessionContext;
 
-    public FetchHeadlinesUseCase(IArticleInteractionService articleService, ISessionContext session)
+    public FetchHeadlinesUseCase(IArticleInteractionService articleInteractionService, ISessionContext sessionContext) =>
+        (_articleInteractionService, _sessionContext) = (articleInteractionService, sessionContext);
+
+    public async Task<List<ArticleDto>> ExecuteAsync(DateTime fromDate, DateTime toDate, string? category)
     {
-        _articleService = articleService;
-        _session = session;
-    }
+        var fetchedArticles = await _articleInteractionService.FetchHeadlinesAsync(fromDate, toDate, category);
+        if (_sessionContext.UserId is null || !fetchedArticles.Any()) return fetchedArticles;
 
-    public async Task<List<ArticleDto>> ExecuteAsync(DateTime from, DateTime to, string? category)
-    {
-        var articles = await _articleService.FetchHeadlinesAsync(from, to, category);
+        var likedArticleIds = (await _articleInteractionService.GetUserReactionsAsync(true)).Select(article => article.Id).ToHashSet();
+        var dislikedArticleIds = (await _articleInteractionService.GetUserReactionsAsync(false)).Select(article => article.Id).ToHashSet();
 
-        if (_session.UserId is not null && articles.Any())
+        fetchedArticles.ForEach(article =>
         {
-            var liked = await _articleService.GetUserReactionsAsync(true);
-            var disliked = await _articleService.GetUserReactionsAsync(false);
-            var likedSet = liked.Select(a => a.Id).ToHashSet();
-            var dislikedSet = disliked.Select(a => a.Id).ToHashSet();
+            article.IsLiked = likedArticleIds.Contains(article.Id);
+            article.IsDisliked = dislikedArticleIds.Contains(article.Id);
+        });
 
-            foreach (var article in articles)
-            {
-                article.IsLiked = likedSet.Contains(article.Id);
-                article.IsDisliked = dislikedSet.Contains(article.Id);
-            }
-        }
-
-        return articles;
+        return fetchedArticles;
     }
 
-    public async Task<List<CategoryDto>> GetCategoriesAsync()
-    {
-        return await _articleService.FetchCategoriesAsync();
-    }
+    public Task<List<CategoryDto>> GetCategoriesAsync() => _articleInteractionService.FetchCategoriesAsync();
 }

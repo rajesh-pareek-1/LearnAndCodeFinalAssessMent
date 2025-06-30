@@ -65,26 +65,26 @@ public static class ConsoleAppHost
 
                 // News & article screens
                 services.AddSingleton<IHeadlinesScreen, HeadlinesScreen>();
-                services.AddSingleton<HeadlinesScreen>(); // in case concrete type is used
+                services.AddSingleton<HeadlinesScreen>(); 
                 services.AddSingleton<ISavedArticlesScreen, SavedArticlesScreen>();
-                services.AddSingleton<SavedArticlesScreen>(); // optional
+                services.AddSingleton<SavedArticlesScreen>();
 
                 // Notifications
                 services.AddSingleton<INotificationService, NotificationService>();
                 services.AddSingleton<INotificationsScreen, NotificationsScreen>();
-                services.AddSingleton<NotificationsScreen>(); // optional
+                services.AddSingleton<NotificationsScreen>();
 
                 // Admin flow
                 services.AddSingleton<IAdminService, AdminService>();
                 services.AddSingleton<IAdminRenderer, AdminRenderer>();
                 services.AddSingleton<IAdminDashboardCoordinator, AdminDashboardCoordinator>();
                 services.AddSingleton<IAdminDashboardScreen, AdminDashboardScreen>();
-                services.AddSingleton<AdminDashboardScreen>(); // concrete required for AppNavigator
+                services.AddSingleton<AdminDashboardScreen>();
 
                 // Article search
                 services.AddSingleton<ISearchArticleService, SearchArticleService>();
                 services.AddSingleton<ISearchArticlesScreen, SearchArticlesScreen>();
-                services.AddSingleton<SearchArticlesScreen>(); // concrete required for AppNavigator
+                services.AddSingleton<SearchArticlesScreen>();
 
                 // App flow
                 services.AddSingleton<AppNavigator>();
