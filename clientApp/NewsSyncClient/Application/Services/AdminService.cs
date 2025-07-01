@@ -18,14 +18,14 @@ public class AdminService : IAdminService
     public async Task<List<ServerStatusDto>> GetServerStatusesAsync()
     {
         var resp = await _client.GetAsync("/api/admin/server");
-        if (!resp.IsSuccessStatusCode) return new();
-        return await resp.Content.ReadFromJsonAsync<List<ServerStatusDto>>() ?? new();
+        if (!resp.IsSuccessStatusCode) return [];
+        return await resp.Content.ReadFromJsonAsync<List<ServerStatusDto>>() ?? [];
     }
 
     public async Task<List<ServerDetailsDto>> GetServerDetailsAsync()
     {
         var resp = await _client.GetAsync("/api/admin/server/details");
-        if (!resp.IsSuccessStatusCode) return new();
+        if (!resp.IsSuccessStatusCode) return [];
         return await resp.Content.ReadFromJsonAsync<List<ServerDetailsDto>>() ?? [];
     }
 

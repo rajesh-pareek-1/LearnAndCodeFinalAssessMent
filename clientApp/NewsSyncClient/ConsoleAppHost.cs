@@ -67,11 +67,11 @@ public static class ConsoleAppHost
 
                 // News & article screens
                 services.AddSingleton<IHeadlinesScreen, HeadlinesScreen>();
-                services.AddSingleton<HeadlinesScreen>(); 
+                services.AddSingleton<HeadlinesScreen>();
                 services.AddSingleton<ISavedArticlesScreen, SavedArticlesScreen>();
                 services.AddSingleton<SavedArticlesScreen>();
 
-                 // Notifications
+                // Notifications
                 services.AddSingleton<INotificationService, NotificationService>();
                 services.AddTransient<IFetchNotificationsUseCase, FetchNotificationsUseCase>();
                 services.AddTransient<INotificationPreferencesUseCase, NotificationPreferencesUseCase>();
@@ -86,11 +86,17 @@ public static class ConsoleAppHost
                 services.AddSingleton<IAdminDashboardScreen, AdminDashboardScreen>();
                 services.AddSingleton<AdminDashboardScreen>();
 
+                services.AddSingleton<IViewServerStatusUseCase, ViewServerStatusUseCase>();
+                services.AddSingleton<IViewServerDetailsUseCase, ViewServerDetailsUseCase>();
+                services.AddSingleton<IUpdateServerApiKeyUseCase, UpdateServerApiKeyUseCase>();
+                services.AddSingleton<IAddCategoryUseCase, AddCategoryUseCase>();
+
+
                 // Article search
                 services.AddSingleton<ISearchArticleService, SearchArticleService>();
                 services.AddSingleton<ISearchArticlesScreen, SearchArticlesScreen>();
                 services.AddSingleton<SearchArticlesScreen>();
-                services.AddSingleton<ISearchArticlesPrompt,SearchArticlesPrompt>();
+                services.AddSingleton<ISearchArticlesPrompt, SearchArticlesPrompt>();
                 services.AddSingleton<ISearchArticlesUseCase, SearchArticlesUseCase>();
 
                 // App flow
