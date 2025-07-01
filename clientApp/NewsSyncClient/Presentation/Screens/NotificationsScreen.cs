@@ -1,123 +1,83 @@
-using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Core.Interfaces.Prompts;
+using NewsSyncClient.Core.Interfaces.Renderer;
 using NewsSyncClient.Core.Interfaces.Screens;
-using NewsSyncClient.Core.Interfaces.Services;
-using NewsSyncClient.Core.Models.Notifications;
-
-namespace NewsSyncClient.Presentation.Screens;
+using NewsSyncClient.Core.Interfaces.UseCases;
 
 public class NotificationsScreen : INotificationsScreen
 {
-    private readonly ISessionContext _session;
-    private readonly INotificationService _notificationService;
+    private readonly IFetchNotificationsUseCase _fetchUseCase;
+    private readonly INotificationPreferencesUseCase _configureUseCase;
+    private readonly INotificationsRenderer _renderer;
+    private readonly INotificationsPrompt _prompt;
 
-    public NotificationsScreen(ISessionContext session, INotificationService notificationService)
+    public NotificationsScreen(IFetchNotificationsUseCase fetchUseCase, INotificationPreferencesUseCase configureUseCase, INotificationsRenderer renderer, INotificationsPrompt prompt)
     {
-        _session = session;
-        _notificationService = notificationService;
+        _fetchUseCase = fetchUseCase;
+        _configureUseCase = configureUseCase;
+        _renderer = renderer;
+        _prompt = prompt;
     }
 
     public async Task ShowAsync()
     {
+        var menuActions = new Dictionary<string, Func<Task>>
+        {
+            ["1"] = ShowNotificationsAsync,
+            ["2"] = ConfigurePreferencesAsync,
+            ["3"] = () => Task.CompletedTask
+        };
+
         while (true)
         {
-            Console.Clear();
-            DisplayHeader();
+            _renderer.RenderHeader();
 
             Console.WriteLine("1. View Notifications");
             Console.WriteLine("2. Configure Notifications");
             Console.WriteLine("3. Back");
             Console.Write("\nEnter your choice: ");
-            var input = Console.ReadLine()?.Trim();
+            var choice = Console.ReadLine()?.Trim();
 
-            switch (input)
-            {
-                case "1":
-                    await ViewNotificationsAsync();
-                    break;
-                case "2":
-                    await ConfigureNotificationsAsync();
-                    break;
-                case "3":
-                    return;
-                default:
-                    Console.WriteLine("Invalid option. Try again.");
-                    break;
-            }
+            if (choice == "3") return;
+
+            if (menuActions.TryGetValue(choice ?? "", out var action))
+                await action();
+            else
+                Console.WriteLine("Invalid option. Try again.");
 
             Console.WriteLine("\nPress Enter to continue...");
             Console.ReadLine();
         }
     }
 
-    private void DisplayHeader()
+    private async Task ShowNotificationsAsync()
     {
-        Console.WriteLine($"Welcome {_session.Email}");
-        Console.WriteLine($"Date: {DateTime.Now:dd-MMM-yyyy} | Time: {DateTime.Now:hh:mm tt}");
-        Console.WriteLine("\n=== NOTIFICATIONS ===\n");
-    }
+        var notifications = await _fetchUseCase.ExecuteAsync();
 
-    private async Task ViewNotificationsAsync()
-    {
-        var notifications = await _notificationService.GetNotificationsAsync();
-
-        if (notifications.Count == 0)
+        if (!notifications.Any())
         {
             Console.WriteLine("\nNo notifications found.");
             return;
         }
 
-        Console.WriteLine("\nYour Notifications:\n");
-        foreach (var note in notifications)
-            DisplayNotification(note);
+        _renderer.RenderNotifications(notifications);
     }
 
-    private void DisplayNotification(NotificationDto notification)
+    private async Task ConfigurePreferencesAsync()
     {
-        var article = notification.Article;
-        Console.WriteLine($"Notification ID: {notification.Id}");
-        Console.WriteLine($"Title: {article.Headline}");
-        Console.WriteLine($"Published: {article.PublishedDate:dd-MMM-yyyy hh:mm tt}");
-        Console.WriteLine($"Author: {article.AuthorName ?? "N/A"}");
-        Console.WriteLine($"Source: {article.Source}");
-        Console.WriteLine($"URL: {article.Url}");
-        Console.WriteLine($"Description: {article.Description}");
-        Console.WriteLine($"Sent At: {notification.SentAt:dd-MMM-yyyy hh:mm tt}");
-        Console.WriteLine(new string('-', 80));
-    }
+        var categories = await _configureUseCase.GetCategoriesAsync();
 
-    private async Task ConfigureNotificationsAsync()
-    {
-        var categories = await _notificationService.GetNotificationCategoriesAsync();
-
-        if (categories.Count == 0)
+        if (!categories.Any())
         {
             Console.WriteLine("\nNo categories available.");
             return;
         }
 
-        Console.WriteLine("\nAvailable Categories:");
-        foreach (var cat in categories)
-            Console.WriteLine($"- {cat.Name} ({cat.Description})");
+        _renderer.RenderCategories(categories);
 
-        Console.Write("\nEnter category to configure: ");
-        var name = Console.ReadLine()?.Trim();
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            Console.WriteLine("Category name is required.");
-            return;
-        }
+        var (categoryName, isEnabled) = _prompt.ReadConfigurationInput();
+        if (string.IsNullOrWhiteSpace(categoryName)) return;
 
-        Console.Write("Enable notifications? (y/n): ");
-        var enableInput = Console.ReadLine()?.Trim().ToLower();
-        if (enableInput != "y" && enableInput != "n")
-        {
-            Console.WriteLine("Invalid input. Use 'y' or 'n'.");
-            return;
-        }
-
-        var enabled = enableInput == "y";
-        var success = await _notificationService.ConfigureNotificationAsync(name, enabled);
-
-        Console.WriteLine(success ? "Notification configuration updated." : "Failed to update configuration.");
+        var result = await _configureUseCase.UpdateCategoryPreferenceAsync(categoryName, isEnabled);
+        Console.WriteLine(result ? "Notification preferences updated." : "Failed to update preferences.");
     }
 }

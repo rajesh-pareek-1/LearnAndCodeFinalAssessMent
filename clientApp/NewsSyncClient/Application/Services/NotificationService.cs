@@ -30,8 +30,17 @@ public class NotificationService : INotificationService
         var response = await _client.GetAsync("/api/categories/article");
         if (!response.IsSuccessStatusCode) return new();
 
-        return await response.Content.ReadFromJsonAsync<List<CategoryDto>>() ?? new();
+        return await response.Content.ReadFromJsonAsync<List<CategoryDto>>() ?? [];
     }
+
+    public async Task<List<NotificationConfigDto>> GetUserNotificationPreferencesAsync(string userId)
+    {
+        var response = await _client.GetAsync($"/api/notification/configure?userId={userId}");
+        if (!response.IsSuccessStatusCode) return new();
+
+        return await response.Content.ReadFromJsonAsync<List<NotificationConfigDto>>() ?? new();
+    }
+
 
     public async Task<bool> ConfigureNotificationAsync(string categoryName, bool enabled)
     {
