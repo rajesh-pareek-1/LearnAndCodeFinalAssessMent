@@ -71,10 +71,13 @@ public static class ConsoleAppHost
                 services.AddSingleton<ISavedArticlesScreen, SavedArticlesScreen>();
                 services.AddSingleton<SavedArticlesScreen>();
 
-                // Notifications
+                 // Notifications
                 services.AddSingleton<INotificationService, NotificationService>();
-                services.AddSingleton<INotificationsScreen, NotificationsScreen>();
-                services.AddSingleton<NotificationsScreen>();
+                services.AddTransient<IFetchNotificationsUseCase, FetchNotificationsUseCase>();
+                services.AddTransient<INotificationPreferencesUseCase, NotificationPreferencesUseCase>();
+                services.AddSingleton<INotificationsRenderer, NotificationsRenderer>();
+                services.AddSingleton<INotificationsPrompt, NotificationsPrompt>();
+                services.AddTransient<INotificationsScreen, NotificationsScreen>();
 
                 // Admin flow
                 services.AddSingleton<IAdminService, AdminService>();
