@@ -87,6 +87,8 @@ public static class ConsoleAppHost
                 services.AddSingleton<ISearchArticleService, SearchArticleService>();
                 services.AddSingleton<ISearchArticlesScreen, SearchArticlesScreen>();
                 services.AddSingleton<SearchArticlesScreen>();
+                services.AddSingleton<ISearchArticlesPrompt,SearchArticlesPrompt>();
+                services.AddSingleton<ISearchArticlesUseCase, SearchArticlesUseCase>();
 
                 // App flow
                 services.AddSingleton<AppNavigator>();
