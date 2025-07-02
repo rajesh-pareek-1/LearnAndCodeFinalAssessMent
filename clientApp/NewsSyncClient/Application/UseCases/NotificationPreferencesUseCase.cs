@@ -8,9 +8,7 @@ public class NotificationPreferencesUseCase : INotificationPreferencesUseCase
     private readonly INotificationService _notificationService;
     private readonly ISessionContext _sessionContext;
 
-    public NotificationPreferencesUseCase(
-        INotificationService notificationService,
-        ISessionContext sessionContext)
+    public NotificationPreferencesUseCase(INotificationService notificationService, ISessionContext sessionContext)
     {
         _notificationService = notificationService;
         _sessionContext = sessionContext;

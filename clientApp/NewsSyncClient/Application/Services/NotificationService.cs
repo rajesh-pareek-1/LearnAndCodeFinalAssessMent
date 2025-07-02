@@ -1,5 +1,5 @@
-using System.Net.Http.Json;
 using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Interfaces.Services;
 using NewsSyncClient.Core.Models.Categories;
 using NewsSyncClient.Core.Models.Notifications;
@@ -8,41 +8,31 @@ namespace NewsSyncClient.Application.Services;
 
 public class NotificationService : INotificationService
 {
-    private readonly HttpClient _client;
+    private readonly IApiClient _apiClient;
     private readonly ISessionContext _session;
 
-    public NotificationService(IHttpClientProvider clientProvider, ISessionContext session)
+    public NotificationService(IApiClient apiClient, ISessionContext session)
     {
-        _client = clientProvider.Client;
+        _apiClient = apiClient;
         _session = session;
     }
 
-    public async Task<List<NotificationDto>> GetNotificationsAsync()
+    public Task<List<NotificationDto>> GetNotificationsAsync()
     {
-        var response = await _client.GetAsync($"/api/notification?userId={_session.UserId}");
-        if (!response.IsSuccessStatusCode) return new();
-
-        return await response.Content.ReadFromJsonAsync<List<NotificationDto>>() ?? new();
+        return _apiClient.GetAsync<List<NotificationDto>>($"/api/notification?userId={_session.UserId}");
     }
 
-    public async Task<List<CategoryDto>> GetNotificationCategoriesAsync()
+    public Task<List<CategoryDto>> GetNotificationCategoriesAsync()
     {
-        var response = await _client.GetAsync("/api/categories/article");
-        if (!response.IsSuccessStatusCode) return new();
-
-        return await response.Content.ReadFromJsonAsync<List<CategoryDto>>() ?? [];
+        return _apiClient.GetAsync<List<CategoryDto>>("/api/categories/article");
     }
 
-    public async Task<List<NotificationConfigDto>> GetUserNotificationPreferencesAsync(string userId)
+    public Task<List<NotificationConfigDto>> GetUserNotificationPreferencesAsync(string userId)
     {
-        var response = await _client.GetAsync($"/api/notification/configure?userId={userId}");
-        if (!response.IsSuccessStatusCode) return new();
-
-        return await response.Content.ReadFromJsonAsync<List<NotificationConfigDto>>() ?? new();
+        return _apiClient.GetAsync<List<NotificationConfigDto>>($"/api/notification/configure?userId={userId}");
     }
 
-
-    public async Task<bool> ConfigureNotificationAsync(string categoryName, bool enabled)
+    public Task<bool> ConfigureNotificationAsync(string categoryName, bool enabled)
     {
         var payload = new
         {
@@ -51,7 +41,6 @@ public class NotificationService : INotificationService
             enabled
         };
 
-        var response = await _client.PutAsJsonAsync("/api/notification/configure", payload);
-        return response.IsSuccessStatusCode;
+        return _apiClient.PutAsync("/api/notification/configure", payload);
     }
 }

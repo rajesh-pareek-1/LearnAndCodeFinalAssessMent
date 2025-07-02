@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Interfaces.Services;
 using NewsSyncClient.Core.Models.Articles;
 using NewsSyncClient.Core.Interfaces;
@@ -7,38 +7,34 @@ namespace NewsSyncClient.Application.Services;
 
 public class SavedArticleService : ISavedArticleService
 {
-    private readonly HttpClient _client;
+    private readonly IApiClient _apiClient;
     private readonly ISessionContext _session;
 
-    public SavedArticleService(IHttpClientProvider clientProvider, ISessionContext session)
+    public SavedArticleService(IApiClient apiClient, ISessionContext session)
     {
-        _client = clientProvider.Client;
+        _apiClient = apiClient;
         _session = session;
     }
 
-    public async Task<List<ArticleDto>> GetSavedArticlesAsync()
+    public Task<List<ArticleDto>> GetSavedArticlesAsync()
     {
         if (_session.UserId is null)
-            return [];
+            return Task.FromResult(new List<ArticleDto>());
 
-        var response = await _client.GetAsync($"/api/savedArticle?userId={_session.UserId}");
-        if (!response.IsSuccessStatusCode)
-            return [];
-
-        return await response.Content.ReadFromJsonAsync<List<ArticleDto>>() ?? [];
+        return _apiClient.GetAsync<List<ArticleDto>>($"/api/savedArticle?userId={_session.UserId}");
     }
-    public async Task SaveArticleAsync(int articleId)
+
+    public Task SaveArticleAsync(int articleId)
     {
         var payload = new { articleId, userId = _session.UserId };
-        await _client.PostAsJsonAsync("/api/savedArticle", payload);
+        return _apiClient.PostAsync("/api/savedArticle", payload);
     }
 
-    public async Task<bool> DeleteSavedArticleAsync(int articleId)
+    public Task<bool> DeleteSavedArticleAsync(int articleId)
     {
         if (_session.UserId is null)
-            return false;
+            return Task.FromResult(false);
 
-        var response = await _client.DeleteAsync($"/api/savedArticle?userId={_session.UserId}&articleId={articleId}");
-        return response.IsSuccessStatusCode;
+        return _apiClient.DeleteAsync($"/api/savedArticle?userId={_session.UserId}&articleId={articleId}");
     }
 }
