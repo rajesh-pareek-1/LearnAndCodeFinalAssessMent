@@ -1,6 +1,5 @@
-using System.Net.Http.Json;
-using System.Text.Json;
 using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Models.Articles;
 using NewsSyncClient.Core.Models.Categories;
 
@@ -8,12 +7,12 @@ namespace NewsSyncClient.Application.Services;
 
 public class ArticleInteractionService : IArticleInteractionService
 {
-    private readonly HttpClient _client;
+    private readonly IApiClient _apiClient;
     private readonly ISessionContext _session;
 
-    public ArticleInteractionService(IHttpClientProvider clientProvider, ISessionContext session)
+    public ArticleInteractionService(IApiClient apiClient, ISessionContext session)
     {
-        _client = clientProvider.Client;
+        _apiClient = apiClient;
         _session = session;
     }
 
@@ -23,17 +22,9 @@ public class ArticleInteractionService : IArticleInteractionService
         if (!string.IsNullOrWhiteSpace(category))
             url += $"&category={Uri.EscapeDataString(category)}";
 
-        var response = await _client.GetAsync(url);
-        Console.WriteLine($"[Article Fetch] URL: {url}");
-        Console.WriteLine($"[Article Fetch] Status: {response.StatusCode}");
+        var articles = await _apiClient.GetAsync<List<ArticleDto>>(url);
 
-        if (!response.IsSuccessStatusCode)
-            return [];
-
-        var articles = await response.Content.ReadFromJsonAsync<List<ArticleDto>>() ?? [];
-
-        // ✅ Enrich with user-specific reactions
-        if (_session.UserId is not null && articles.Any())
+        if (_session.UserId is not null && articles.Count != 0)
         {
             var likedArticles = await GetUserReactionsAsync(true);
             var dislikedArticles = await GetUserReactionsAsync(false);
@@ -48,63 +39,48 @@ public class ArticleInteractionService : IArticleInteractionService
             }
         }
 
-        // ✅ Log enriched articles
-        var json = JsonSerializer.Serialize(articles, new JsonSerializerOptions { WriteIndented = true });
-        Console.WriteLine("[Final Enriched Articles]:\n" + json);
-
         return articles;
     }
 
-    public async Task<List<CategoryDto>> FetchCategoriesAsync()
+    public Task<List<CategoryDto>> FetchCategoriesAsync()
     {
-        var response = await _client.GetAsync("/api/categories/article");
-        if (!response.IsSuccessStatusCode)
-            return new();
-
-        return await response.Content.ReadFromJsonAsync<List<CategoryDto>>() ?? new();
+        return _apiClient.GetAsync<List<CategoryDto>>("/api/categories/article");
     }
 
-    public async Task SaveArticleAsync(int articleId)
+    public Task SaveArticleAsync(int articleId)
     {
         var payload = new { articleId, userId = _session.UserId };
-        await _client.PostAsJsonAsync("/api/savedArticle", payload);
+        return _apiClient.PostAsync("/api/savedArticle", payload);
     }
 
-    public async Task ReactToArticleAsync(int articleId, bool isLiked)
+    public Task ReactToArticleAsync(int articleId, bool isLiked)
     {
         var payload = new
         {
             ArticleId = articleId,
-            UserId = _session.UserId,
+            _session.UserId,
             IsLiked = isLiked
         };
-        await _client.PostAsJsonAsync("/api/article/reaction", payload);
+        return _apiClient.PostAsync("/api/article/reaction", payload);
     }
 
-    public async Task ReportArticleAsync(int articleId, string? reason)
+    public Task ReportArticleAsync(int articleId, string? reason)
     {
         var payload = new
         {
             ArticleId = articleId,
-            UserId = _session.UserId,
+            _session.UserId,
             Reason = reason
         };
-        await _client.PostAsJsonAsync("/api/article/report", payload);
+        return _apiClient.PostAsync("/api/article/report", payload);
     }
 
     public async Task<List<ArticleDto>> GetUserReactionsAsync(bool liked)
     {
         if (_session.UserId is null)
-            return new();
-
-        var url = $"/api/Article/reaction/user/{_session.UserId}?liked={liked.ToString().ToLower()}";
-
-        var response = await _client.GetAsync(url);
-
-        if (!response.IsSuccessStatusCode)
             return [];
 
-        return await response.Content.ReadFromJsonAsync<List<ArticleDto>>() ?? [];
+        var url = $"/api/article/reaction/user/{_session.UserId}?liked={liked.ToString().ToLower()}";
+        return await _apiClient.GetAsync<List<ArticleDto>>(url);
     }
-
 }

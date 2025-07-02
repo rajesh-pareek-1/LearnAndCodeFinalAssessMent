@@ -1,4 +1,4 @@
-namespace NewsSyncClient.Core.Interfaces;
+namespace NewsSyncClient.Core.Interfaces.Api;
 
 public interface IHttpClientProvider
 {

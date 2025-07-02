@@ -1,33 +1,28 @@
-using System.Net.Http.Json;
 using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Models.Auth;
 
 namespace NewsSyncClient.Application.Services;
 
 public class SignupService : ISignupService
 {
-    private readonly IHttpClientProvider _clientProvider;
+    private readonly IApiClient _apiClient;
 
-    public SignupService(IHttpClientProvider clientProvider)
+    public SignupService(IApiClient apiClient)
     {
-        _clientProvider = clientProvider;
+        _apiClient = apiClient;
     }
 
     public async Task<(bool Success, string Message)> RegisterAsync(SignupRequestDto dto)
     {
         try
         {
-            var response = await _clientProvider.Client.PostAsJsonAsync("api/auth/register", dto);
-
-            if (response.IsSuccessStatusCode)
-                return (true, "Signup successful! Please proceed to login.");
-
-            var error = await response.Content.ReadAsStringAsync();
-            return (false, $"Signup failed: {error}");
+            var result = await _apiClient.PostAsync("api/auth/register", dto);
+            return (result, result ? "Signup successful! Please proceed to login." : "Signup failed.");
         }
         catch (Exception ex)
         {
-            return (false, $"An unexpected error occurred: {ex.Message}");
+            return (false, $"Signup failed: {ex.Message}");
         }
     }
 }

@@ -1,17 +1,18 @@
-using System.Net.Http.Json;
-using System.Text.Json;
 using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Models.Auth;
 
 namespace NewsSyncClient.Application.Services;
 
 public class AuthService : IAuthService
 {
+    private readonly IApiClient _apiClient;
     private readonly IHttpClientProvider _clientProvider;
     private readonly ISessionContext _session;
 
-    public AuthService(IHttpClientProvider clientProvider, ISessionContext session)
+    public AuthService(IApiClient apiClient, IHttpClientProvider clientProvider, ISessionContext session)
     {
+        _apiClient = apiClient;
         _clientProvider = clientProvider;
         _session = session;
     }
@@ -20,18 +21,20 @@ public class AuthService : IAuthService
     {
         var payload = new { Username = email, Password = password };
 
-        var response = await _clientProvider.Client.PostAsJsonAsync("api/auth/login", payload);
-        if (!response.IsSuccessStatusCode) return false;
-
-        var content = await response.Content.ReadAsStringAsync();
-        var loginResponse = JsonSerializer.Deserialize<LoginResponseDto>(content, new JsonSerializerOptions
+        LoginResponseDto loginResponse;
+        try
         {
-            PropertyNameCaseInsensitive = true
-        });
+            loginResponse = await _apiClient.PostAsync<object, LoginResponseDto>("/api/auth/login", payload);
+        }
+        catch
+        {
+            return false;
+        }
 
-        if (loginResponse == null || string.IsNullOrWhiteSpace(loginResponse.JwtToken)) return false;
+        if (string.IsNullOrWhiteSpace(loginResponse.JwtToken)) return false;
 
         _clientProvider.SetJwtToken(loginResponse.JwtToken);
+        
         _session.JwtToken = loginResponse.JwtToken;
         _session.UserId = loginResponse.UserId;
         _session.Email = email;

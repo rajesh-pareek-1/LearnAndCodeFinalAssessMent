@@ -5,11 +5,13 @@ using Microsoft.Extensions.Logging;
 using NewsSyncClient.Application.Services;
 using NewsSyncClient.Application.UseCases;
 using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Interfaces.Prompts;
 using NewsSyncClient.Core.Interfaces.Renderer;
 using NewsSyncClient.Core.Interfaces.Screens;
 using NewsSyncClient.Core.Interfaces.Services;
 using NewsSyncClient.Core.Interfaces.UseCases;
+using NewsSyncClient.Infrastructure.Api;
 using NewsSyncClient.Infrastructure.Security;
 using NewsSyncClient.Presentation.Prompts;
 using NewsSyncClient.Presentation.Renderers;
@@ -101,6 +103,12 @@ public static class ConsoleAppHost
 
                 // App flow
                 services.AddSingleton<AppNavigator>();
+
+                //Error
+                services.AddSingleton<IErrorRenderer, ConsoleErrorRenderer>();
+
+                services.AddSingleton<IApiClient, ApiClient>();
+
             })
             .ConfigureLogging(logging =>
             {
@@ -109,7 +117,18 @@ public static class ConsoleAppHost
             })
             .Build();
 
-        var navigator = host.Services.GetRequiredService<AppNavigator>();
-        await navigator.StartAsync();
+        try
+        {
+            var navigator = host.Services.GetRequiredService<AppNavigator>();
+            await navigator.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            var errorRenderer = host.Services.GetService<IErrorRenderer>();
+            var logger = host.Services.GetService<ILoggerFactory>()?.CreateLogger("Global");
+
+            logger?.LogError(ex, "Unhandled exception occurred.");
+            errorRenderer?.Render(ex);
+        }
     }
 }

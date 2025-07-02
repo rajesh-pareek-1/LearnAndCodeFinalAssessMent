@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Configuration;
-using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Core.Interfaces.Api;
 
 namespace NewsSyncClient.Infrastructure.Security;
 

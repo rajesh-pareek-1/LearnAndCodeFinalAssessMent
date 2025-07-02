@@ -1,4 +1,5 @@
 using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Core.Interfaces.Renderer;
 using NewsSyncClient.Core.Interfaces.Screens;
 using NewsSyncClient.Core.Interfaces.UseCases;
 
@@ -12,8 +13,9 @@ public class AdminDashboardCoordinator : IAdminDashboardCoordinator
     private readonly IViewServerDetailsUseCase _detailsUseCase;
     private readonly IUpdateServerApiKeyUseCase _updateKeyUseCase;
     private readonly IAddCategoryUseCase _addCategoryUseCase;
+    private readonly IErrorRenderer _errorRenderer;
 
-    public AdminDashboardCoordinator(IAdminRenderer renderer, ISessionContext session, IViewServerStatusUseCase statusUseCase, IViewServerDetailsUseCase detailsUseCase, IUpdateServerApiKeyUseCase updateKeyUseCase, IAddCategoryUseCase addCategoryUseCase)
+    public AdminDashboardCoordinator(IAdminRenderer renderer, ISessionContext session, IViewServerStatusUseCase statusUseCase, IViewServerDetailsUseCase detailsUseCase, IUpdateServerApiKeyUseCase updateKeyUseCase, IAddCategoryUseCase addCategoryUseCase, IErrorRenderer errorRenderer)
     {
         _renderer = renderer;
         _session = session;
@@ -21,6 +23,7 @@ public class AdminDashboardCoordinator : IAdminDashboardCoordinator
         _detailsUseCase = detailsUseCase;
         _updateKeyUseCase = updateKeyUseCase;
         _addCategoryUseCase = addCategoryUseCase;
+        _errorRenderer = errorRenderer;
     }
 
     public async Task StartAsync()
@@ -36,19 +39,19 @@ public class AdminDashboardCoordinator : IAdminDashboardCoordinator
             switch (choice)
             {
                 case "1":
-                    await _statusUseCase.ExecuteAsync();
+                    await ExecuteSafeAsync(() => _statusUseCase.ExecuteAsync());
                     break;
 
                 case "2":
-                    await _detailsUseCase.ExecuteAsync();
+                    await ExecuteSafeAsync(() => _detailsUseCase.ExecuteAsync());
                     break;
 
                 case "3":
-                    await _updateKeyUseCase.ExecuteAsync();
+                    await ExecuteSafeAsync(() => _updateKeyUseCase.ExecuteAsync());
                     break;
 
                 case "4":
-                    await _addCategoryUseCase.ExecuteAsync();
+                    await ExecuteSafeAsync(() => _addCategoryUseCase.ExecuteAsync());
                     break;
 
                 case "5":
@@ -65,4 +68,17 @@ public class AdminDashboardCoordinator : IAdminDashboardCoordinator
             Console.ReadLine();
         }
     }
+
+    private async Task ExecuteSafeAsync(Func<Task> action)
+    {
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            _errorRenderer.Render(ex);
+        }
+    }
+
 }

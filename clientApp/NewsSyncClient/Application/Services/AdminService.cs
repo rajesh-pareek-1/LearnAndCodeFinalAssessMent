@@ -1,45 +1,37 @@
-using System.Net.Http.Json;
+using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Interfaces.Services;
 using NewsSyncClient.Core.Models.Admin;
-using NewsSyncClient.Core.Interfaces;
 
 namespace NewsSyncClient.Application.Services;
 
 public class AdminService : IAdminService
 {
-    private readonly HttpClient _client;
+    private readonly IApiClient _apiClient;
 
-
-    public AdminService(IHttpClientProvider clientProvider)
+    public AdminService(IApiClient apiClient)
     {
-        _client = clientProvider.Client;
+        _apiClient = apiClient;
     }
 
-    public async Task<List<ServerStatusDto>> GetServerStatusesAsync()
+    public Task<List<ServerStatusDto>> GetServerStatusesAsync()
     {
-        var resp = await _client.GetAsync("/api/admin/server");
-        if (!resp.IsSuccessStatusCode) return [];
-        return await resp.Content.ReadFromJsonAsync<List<ServerStatusDto>>() ?? [];
+        return _apiClient.GetAsync<List<ServerStatusDto>>("/api/admin/server");
     }
 
-    public async Task<List<ServerDetailsDto>> GetServerDetailsAsync()
+    public Task<List<ServerDetailsDto>> GetServerDetailsAsync()
     {
-        var resp = await _client.GetAsync("/api/admin/server/details");
-        if (!resp.IsSuccessStatusCode) return [];
-        return await resp.Content.ReadFromJsonAsync<List<ServerDetailsDto>>() ?? [];
+        return _apiClient.GetAsync<List<ServerDetailsDto>>("/api/admin/server/details");
     }
 
-    public async Task<bool> UpdateServerApiKeyAsync(int serverId, string newApiKey)
+    public Task<bool> UpdateServerApiKeyAsync(int serverId, string newApiKey)
     {
         var payload = new { newApiKey };
-        var resp = await _client.PutAsJsonAsync($"/api/admin/server/{serverId}", payload);
-        return resp.IsSuccessStatusCode;
+        return _apiClient.PutAsync($"/api/admin/server/{serverId}", payload);
     }
 
-    public async Task<bool> AddCategoryAsync(string name, string description)
+    public Task<bool> AddCategoryAsync(string name, string description)
     {
         var payload = new { name, description };
-        var resp = await _client.PostAsJsonAsync("/api/admin/category", payload);
-        return resp.IsSuccessStatusCode;
+        return _apiClient.PostAsync("/api/admin/category", payload);
     }
 }

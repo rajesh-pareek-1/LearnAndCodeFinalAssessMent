@@ -1,5 +1,4 @@
-using System.Net.Http.Json;
-using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Interfaces.Services;
 using NewsSyncClient.Core.Models.Articles;
 
@@ -7,19 +6,16 @@ namespace NewsSyncClient.Application.Services;
 
 public class SearchArticleService : ISearchArticleService
 {
-    private readonly HttpClient _client;
+    private readonly IApiClient _apiClient;
 
-    public SearchArticleService(IHttpClientProvider clientProvider)
+    public SearchArticleService(IApiClient apiClient)
     {
-        _client = clientProvider.Client;
+        _apiClient = apiClient;
     }
 
-    public async Task<List<ArticleDto>> SearchAsync(string query)
+    public Task<List<ArticleDto>> SearchAsync(string query)
     {
-        var response = await _client.GetAsync($"/api/article/search?query={Uri.EscapeDataString(query)}");
-        if (!response.IsSuccessStatusCode)
-            return [];
-
-        return await response.Content.ReadFromJsonAsync<List<ArticleDto>>() ?? [];
+        var encodedQuery = Uri.EscapeDataString(query);
+        return _apiClient.GetAsync<List<ArticleDto>>($"/api/article/search?query={encodedQuery}");
     }
 }
