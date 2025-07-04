@@ -20,7 +20,7 @@ public class SavedArticleService : ISavedArticleService
     public Task<List<ArticleDto>> GetSavedArticlesAsync()
     {
         if (string.IsNullOrWhiteSpace(_session.UserId))
-            throw new ValidationException("User must be logged in to retrieve saved articles.");
+            throw new UserInputException("You must be logged in to view saved articles.");
 
         return _apiClient.GetAsync<List<ArticleDto>>($"/api/savedArticle?userId={_session.UserId}");
     }
@@ -28,10 +28,10 @@ public class SavedArticleService : ISavedArticleService
     public Task SaveArticleAsync(int articleId)
     {
         if (string.IsNullOrWhiteSpace(_session.UserId))
-            throw new ValidationException("User must be logged in to save an article.");
+            throw new UserInputException("You must be logged in to save an article.");
 
         if (articleId <= 0)
-            throw new ValidationException("Article ID must be a positive number.");
+            throw new ValidationException("Invalid Article ID. Must be a positive number.");
 
         var payload = new { articleId, userId = _session.UserId };
         return _apiClient.PostAsync("/api/savedArticle", payload);
@@ -40,10 +40,10 @@ public class SavedArticleService : ISavedArticleService
     public Task<bool> DeleteSavedArticleAsync(int articleId)
     {
         if (string.IsNullOrWhiteSpace(_session.UserId))
-            throw new ValidationException("User must be logged in to delete a saved article.");
+            throw new UserInputException("You must be logged in to delete a saved article.");
 
         if (articleId <= 0)
-            throw new ValidationException("Article ID must be a positive number.");
+            throw new ValidationException("Invalid Article ID. Must be a positive number.");
 
         return _apiClient.DeleteAsync($"/api/savedArticle?userId={_session.UserId}&articleId={articleId}");
     }

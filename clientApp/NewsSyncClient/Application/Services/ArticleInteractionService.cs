@@ -56,8 +56,8 @@ public class ArticleInteractionService : IArticleInteractionService
         if (articleId <= 0)
             throw new ValidationException("Invalid article ID.");
 
-        if (_session.UserId is null)
-            throw new ValidationException("User must be logged in to save articles.");
+        if (string.IsNullOrWhiteSpace(_session.UserId))
+            throw new UserInputException("You must be logged in to save articles.");
 
         var payload = new { articleId, userId = _session.UserId };
         return _apiClient.PostAsync("/api/savedArticle", payload);
@@ -68,8 +68,8 @@ public class ArticleInteractionService : IArticleInteractionService
         if (articleId <= 0)
             throw new ValidationException("Invalid article ID.");
 
-        if (_session.UserId is null)
-            throw new ValidationException("User must be logged in to react to articles.");
+        if (string.IsNullOrWhiteSpace(_session.UserId))
+            throw new UserInputException("You must be logged in to react to articles.");
 
         var payload = new
         {
@@ -85,8 +85,8 @@ public class ArticleInteractionService : IArticleInteractionService
         if (articleId <= 0)
             throw new ValidationException("Invalid article ID.");
 
-        if (_session.UserId is null)
-            throw new ValidationException("User must be logged in to report articles.");
+        if (string.IsNullOrWhiteSpace(_session.UserId))
+            throw new UserInputException("You must be logged in to report articles.");
 
         if (string.IsNullOrWhiteSpace(reason))
             throw new ValidationException("Report reason cannot be empty.");
@@ -102,7 +102,7 @@ public class ArticleInteractionService : IArticleInteractionService
 
     public async Task<List<ArticleDto>> GetUserReactionsAsync(bool liked)
     {
-        if (_session.UserId is null)
+        if (string.IsNullOrWhiteSpace(_session.UserId))
             return [];
 
         var url = $"/api/article/reaction/user/{_session.UserId}?liked={liked.ToString().ToLower()}";

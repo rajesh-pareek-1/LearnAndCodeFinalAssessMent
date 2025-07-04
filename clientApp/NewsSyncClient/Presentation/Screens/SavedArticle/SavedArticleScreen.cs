@@ -1,7 +1,10 @@
+using NewsSyncClient.Core.Exceptions;
 using NewsSyncClient.Core.Interfaces.Prompts;
 using NewsSyncClient.Core.Interfaces.Renderer;
 using NewsSyncClient.Core.Interfaces.Screens;
 using NewsSyncClient.Core.Interfaces.UseCases;
+
+namespace NewsSyncClient.Presentation.Screens;
 
 public class SavedArticlesScreen : ISavedArticlesScreen
 {
@@ -21,15 +24,22 @@ public class SavedArticlesScreen : ISavedArticlesScreen
         Console.Clear();
         Console.WriteLine("=== Saved Articles ===\n");
 
-        var savedArticles = await _savedArticlesFetcher.ExecuteAsync();
-
-        if (savedArticles.Count == 0)
+        try
         {
-            Console.WriteLine("You haven't saved any articles yet.");
-            return;
+            var savedArticles = await _savedArticlesFetcher.ExecuteAsync();
+
+            if (savedArticles == null || savedArticles.Count == 0)
+                throw new UserInputException("You haven't saved any articles yet.");
+
+            _articleRenderer.Render(savedArticles);
+            await _deletePrompt.ShowAsync(savedArticles);
+        }
+        catch (UserInputException ex)
+        {
+            Console.WriteLine($"\n {ex.Message}");
         }
 
-        _articleRenderer.Render(savedArticles);
-        await _deletePrompt.ShowAsync(savedArticles);
+        Console.WriteLine("\nPress Enter to return.");
+        Console.ReadLine();
     }
 }

@@ -1,9 +1,11 @@
+using NewsSyncClient.Core.Exceptions;
 using NewsSyncClient.Core.Interfaces.Prompts;
 using NewsSyncClient.Core.Interfaces.Renderer;
 using NewsSyncClient.Core.Interfaces.Screens;
 using NewsSyncClient.Core.Interfaces.UseCases;
 
 namespace NewsSyncClient.Presentation.Screens;
+
 public class SearchArticlesScreen : ISearchArticlesScreen
 {
     private readonly ISearchArticlesUseCase _useCase;
@@ -22,23 +24,30 @@ public class SearchArticlesScreen : ISearchArticlesScreen
         Console.Clear();
         Console.WriteLine("=== Article Search ===\n");
 
-        var query = AskSearchTerm();
-        if (string.IsNullOrWhiteSpace(query))
+        try
         {
-            Console.WriteLine("Search term cannot be empty.");
-            return;
+            var query = AskSearchTerm();
+            if (string.IsNullOrWhiteSpace(query))
+                throw new UserInputException("Search term cannot be empty.");
+
+            var articles = await _useCase.ExecuteAsync(query);
+
+            if (articles.Count == 0)
+            {
+                Console.WriteLine("No articles found.");
+                return;
+            }
+
+            _renderer.Render(articles);
+            await _prompt.PromptToSaveAsync(articles);
+        }
+        catch (UserInputException ex)
+        {
+            Console.WriteLine($"\n {ex.Message}");
         }
 
-        var articles = await _useCase.ExecuteAsync(query);
-
-        if (articles.Count == 0)
-        {
-            Console.WriteLine("No articles found.");
-            return;
-        }
-
-        _renderer.Render(articles);
-        await _prompt.PromptToSaveAsync(articles);
+        Console.WriteLine("\nPress Enter to return.");
+        Console.ReadLine();
     }
 
     private string? AskSearchTerm()

@@ -1,3 +1,4 @@
+using NewsSyncClient.Core.Exceptions;
 using NewsSyncClient.Core.Interfaces;
 using NewsSyncClient.Core.Interfaces.Services;
 using NewsSyncClient.Core.Interfaces.UseCases;
@@ -20,7 +21,7 @@ public class NotificationPreferencesUseCase : INotificationPreferencesUseCase
 
         var userId = _sessionContext.UserId;
         if (string.IsNullOrWhiteSpace(userId))
-            throw new InvalidOperationException("User is not logged in.");
+            throw new UserInputException("User must be logged in to view notification preferences.");
 
         var userPreferences = await _notificationService.GetUserNotificationPreferencesAsync(userId);
 
