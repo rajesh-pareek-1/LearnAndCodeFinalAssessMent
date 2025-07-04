@@ -1,3 +1,4 @@
+using NewsSyncClient.Core.Exceptions;
 using NewsSyncClient.Core.Interfaces;
 using NewsSyncClient.Core.Models.Auth;
 
@@ -17,17 +18,30 @@ public class SignupScreen
         Console.Clear();
         Console.WriteLine("=== Sign Up ===\n");
 
-        var email = Prompt("Email: ");
-        var password = Prompt("Password: ");
-
-        var dto = new SignupRequestDto
+        try
         {
-            Username = email,
-            Password = password
-        };
+            var email = Prompt("Email: ");
+            var password = Prompt("Password: ");
 
-        var (success, message) = await _signupService.RegisterAsync(dto);
-        Console.WriteLine($"\n{message}");
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UserInputException("Email cannot be empty.");
+
+            if (string.IsNullOrWhiteSpace(password))
+                throw new UserInputException("Password cannot be empty.");
+
+            var dto = new SignupRequestDto
+            {
+                Username = email,
+                Password = password
+            };
+
+            var (success, message) = await _signupService.RegisterAsync(dto);
+            Console.WriteLine($"\n{message}");
+        }
+        catch (UserInputException ex)
+        {
+            Console.WriteLine($"\n {ex.Message}");
+        }
 
         Console.WriteLine("\nPress Enter to return.");
         Console.ReadLine();
