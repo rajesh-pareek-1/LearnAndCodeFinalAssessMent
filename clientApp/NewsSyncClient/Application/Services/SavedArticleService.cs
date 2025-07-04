@@ -1,7 +1,8 @@
+using NewsSyncClient.Core.Exceptions;
+using NewsSyncClient.Core.Interfaces;
 using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Interfaces.Services;
 using NewsSyncClient.Core.Models.Articles;
-using NewsSyncClient.Core.Interfaces;
 
 namespace NewsSyncClient.Application.Services;
 
@@ -18,22 +19,31 @@ public class SavedArticleService : ISavedArticleService
 
     public Task<List<ArticleDto>> GetSavedArticlesAsync()
     {
-        if (_session.UserId is null)
-            return Task.FromResult(new List<ArticleDto>());
+        if (string.IsNullOrWhiteSpace(_session.UserId))
+            throw new ValidationException("User must be logged in to retrieve saved articles.");
 
         return _apiClient.GetAsync<List<ArticleDto>>($"/api/savedArticle?userId={_session.UserId}");
     }
 
     public Task SaveArticleAsync(int articleId)
     {
+        if (string.IsNullOrWhiteSpace(_session.UserId))
+            throw new ValidationException("User must be logged in to save an article.");
+
+        if (articleId <= 0)
+            throw new ValidationException("Article ID must be a positive number.");
+
         var payload = new { articleId, userId = _session.UserId };
         return _apiClient.PostAsync("/api/savedArticle", payload);
     }
 
     public Task<bool> DeleteSavedArticleAsync(int articleId)
     {
-        if (_session.UserId is null)
-            return Task.FromResult(false);
+        if (string.IsNullOrWhiteSpace(_session.UserId))
+            throw new ValidationException("User must be logged in to delete a saved article.");
+
+        if (articleId <= 0)
+            throw new ValidationException("Article ID must be a positive number.");
 
         return _apiClient.DeleteAsync($"/api/savedArticle?userId={_session.UserId}&articleId={articleId}");
     }

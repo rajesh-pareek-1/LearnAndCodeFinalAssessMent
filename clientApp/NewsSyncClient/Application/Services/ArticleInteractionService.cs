@@ -1,3 +1,4 @@
+using NewsSyncClient.Core.Exceptions;
 using NewsSyncClient.Core.Interfaces;
 using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Models.Articles;
@@ -18,6 +19,9 @@ public class ArticleInteractionService : IArticleInteractionService
 
     public async Task<List<ArticleDto>> FetchHeadlinesAsync(DateTime from, DateTime to, string? category = null)
     {
+        if (from > to)
+            throw new ValidationException("Start date must be earlier than end date.");
+
         var url = $"/api/article?fromDate={from:yyyy-MM-dd}&toDate={to.AddDays(1):yyyy-MM-dd}";
         if (!string.IsNullOrWhiteSpace(category))
             url += $"&category={Uri.EscapeDataString(category)}";
@@ -49,12 +53,24 @@ public class ArticleInteractionService : IArticleInteractionService
 
     public Task SaveArticleAsync(int articleId)
     {
+        if (articleId <= 0)
+            throw new ValidationException("Invalid article ID.");
+
+        if (_session.UserId is null)
+            throw new ValidationException("User must be logged in to save articles.");
+
         var payload = new { articleId, userId = _session.UserId };
         return _apiClient.PostAsync("/api/savedArticle", payload);
     }
 
     public Task ReactToArticleAsync(int articleId, bool isLiked)
     {
+        if (articleId <= 0)
+            throw new ValidationException("Invalid article ID.");
+
+        if (_session.UserId is null)
+            throw new ValidationException("User must be logged in to react to articles.");
+
         var payload = new
         {
             ArticleId = articleId,
@@ -66,6 +82,15 @@ public class ArticleInteractionService : IArticleInteractionService
 
     public Task ReportArticleAsync(int articleId, string? reason)
     {
+        if (articleId <= 0)
+            throw new ValidationException("Invalid article ID.");
+
+        if (_session.UserId is null)
+            throw new ValidationException("User must be logged in to report articles.");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ValidationException("Report reason cannot be empty.");
+
         var payload = new
         {
             ArticleId = articleId,

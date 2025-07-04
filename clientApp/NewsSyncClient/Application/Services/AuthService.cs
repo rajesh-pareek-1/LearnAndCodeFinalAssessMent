@@ -1,3 +1,4 @@
+using NewsSyncClient.Core.Exceptions;
 using NewsSyncClient.Core.Interfaces;
 using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Models.Auth;
@@ -19,6 +20,12 @@ public class AuthService : IAuthService
 
     public async Task<bool> LoginAsync(string email, string password)
     {
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ValidationException("Email cannot be empty.");
+
+        if (string.IsNullOrWhiteSpace(password))
+            throw new ValidationException("Password cannot be empty.");
+
         var payload = new { Username = email, Password = password };
 
         LoginResponseDto loginResponse;
@@ -31,10 +38,11 @@ public class AuthService : IAuthService
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(loginResponse.JwtToken)) return false;
+        if (string.IsNullOrWhiteSpace(loginResponse.JwtToken))
+            return false;
 
         _clientProvider.SetJwtToken(loginResponse.JwtToken);
-        
+
         _session.JwtToken = loginResponse.JwtToken;
         _session.UserId = loginResponse.UserId;
         _session.Email = email;
