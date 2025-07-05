@@ -3,6 +3,7 @@ using NewsSyncClient.Core.Interfaces.Prompts;
 using NewsSyncClient.Core.Interfaces.Renderer;
 using NewsSyncClient.Core.Interfaces.Screens;
 using NewsSyncClient.Core.Interfaces.UseCases;
+using NewsSyncClient.Presentation.Helpers;
 
 namespace NewsSyncClient.Presentation.Screens;
 
@@ -22,7 +23,7 @@ public class SavedArticlesScreen : ISavedArticlesScreen
     public async Task ShowAsync()
     {
         Console.Clear();
-        Console.WriteLine("=== Saved Articles ===\n");
+        ConsoleOutputHelper.PrintHeader("Saved Articles");
 
         try
         {
@@ -36,10 +37,9 @@ public class SavedArticlesScreen : ISavedArticlesScreen
         }
         catch (UserInputException ex)
         {
-            Console.WriteLine($"\n {ex.Message}");
+            ConsoleOutputHelper.PrintWarning(ex.Message);
         }
 
-        Console.WriteLine("\nPress Enter to return.");
-        Console.ReadLine();
+        ConsoleInputHelper.ReadOptional("\nPress Enter to return...");
     }
 }

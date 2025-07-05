@@ -1,6 +1,7 @@
 using NewsSyncClient.Core.Exceptions;
 using NewsSyncClient.Core.Interfaces;
 using NewsSyncClient.Core.Models.Auth;
+using NewsSyncClient.Presentation.Helpers;
 
 namespace NewsSyncClient.Presentation.Screens;
 
@@ -16,40 +17,23 @@ public class SignupScreen
     public async Task ShowAsync()
     {
         Console.Clear();
-        Console.WriteLine("=== Sign Up ===\n");
+        ConsoleOutputHelper.PrintHeader("Sign Up");
 
         try
         {
-            var email = Prompt("Email: ");
-            var password = Prompt("Password: ");
+            var email = ConsoleInputHelper.ReadRequiredString("Email: ");
+            var password = ConsoleInputHelper.ReadRequiredString("Password: ");
 
-            if (string.IsNullOrWhiteSpace(email))
-                throw new UserInputException("Email cannot be empty.");
-
-            if (string.IsNullOrWhiteSpace(password))
-                throw new UserInputException("Password cannot be empty.");
-
-            var dto = new SignupRequestDto
-            {
-                Username = email,
-                Password = password
-            };
-
+            var dto = new SignupRequestDto { Username = email, Password = password };
             var (success, message) = await _signupService.RegisterAsync(dto);
-            Console.WriteLine($"\n{message}");
+
+            ConsoleOutputHelper.PrintInfo($"\n{message}");
         }
         catch (UserInputException ex)
         {
-            Console.WriteLine($"\n {ex.Message}");
+            ConsoleOutputHelper.PrintError(ex.Message);
         }
 
-        Console.WriteLine("\nPress Enter to return.");
-        Console.ReadLine();
-    }
-
-    private static string Prompt(string label)
-    {
-        Console.Write(label);
-        return Console.ReadLine()?.Trim() ?? string.Empty;
+        ConsoleInputHelper.ReadOptional("\nPress Enter to return...");
     }
 }

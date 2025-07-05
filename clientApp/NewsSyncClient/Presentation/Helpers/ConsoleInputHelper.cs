@@ -1,23 +1,69 @@
-public static class ConsoleInputHelper
+namespace NewsSyncClient.Presentation.Helpers
 {
-    public static (DateTime?, DateTime?) ReadDateRange()
+    public static class ConsoleInputHelper
     {
-        Console.Write("From (yyyy-mm-dd): ");
-        var from = Console.ReadLine();
+        public static string ReadRequiredString(string prompt)
+        {
+            while (true)
+            {
+                Console.Write(prompt);
+                var input = Console.ReadLine()?.Trim();
+                if (!string.IsNullOrEmpty(input)) return input;
+                Console.WriteLine("Input cannot be empty. Please try again.");
+            }
+        }
 
-        Console.Write("To (yyyy-mm-dd): ");
-        var to = Console.ReadLine();
+        public static int ReadPositiveInt(string prompt)
+        {
+            while (true)
+            {
+                Console.Write(prompt);
+                var input = Console.ReadLine()?.Trim();
+                if (int.TryParse(input, out var value) && value > 0)
+                    return value;
+                Console.WriteLine("Please enter a positive integer.");
+            }
+        }
 
-        if (DateTime.TryParse(from, out var fromDate) && DateTime.TryParse(to, out var toDate))
-            return (fromDate, toDate);
+        public static (DateTime from, DateTime to) ReadDateRange()
+        {
+            while (true)
+            {
+                Console.Write("From (yyyy-mm-dd): ");
+                var fromStr = Console.ReadLine()?.Trim();
+                Console.Write("To   (yyyy-mm-dd): ");
+                var toStr = Console.ReadLine()?.Trim();
 
-        Console.WriteLine("Invalid dates.");
-        return (null, null);
-    }
+                if (DateTime.TryParse(fromStr, out var from) && DateTime.TryParse(toStr, out var to))
+                    return (from, to);
 
-    public static string? ReadOptional(string message)
-    {
-        Console.Write(message);
-        return Console.ReadLine()?.Trim();
+                Console.WriteLine("Invalid date format. Please try again.");
+            }
+        }
+
+        public static string? ReadOptional(string prompt)
+        {
+            Console.Write(prompt);
+            return Console.ReadLine()?.Trim();
+        }
+
+        public static bool Confirm(string prompt)
+        {
+            while (true)
+            {
+                Console.Write($"{prompt} (y/n): ");
+                var input = Console.ReadLine()?.Trim().ToLower();
+                if (input == "y") return true;
+                if (input == "n") return false;
+                Console.WriteLine("Please enter 'y' or 'n'.");
+            }
+        }
+
+        public static void WaitForUser(string message = "Press Enter to continue...")
+        {
+            ConsoleOutputHelper.PrintInfo(message, inline: true);
+            Console.ReadLine();
+        }
+
     }
 }

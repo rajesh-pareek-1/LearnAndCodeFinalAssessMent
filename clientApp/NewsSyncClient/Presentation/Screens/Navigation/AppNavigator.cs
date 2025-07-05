@@ -1,5 +1,7 @@
 using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Presentation.Helpers;
 using NewsSyncClient.Presentation.Screens;
+
 public class AppNavigator
 {
     private readonly IAuthService _authService;
@@ -28,7 +30,7 @@ public class AppNavigator
             Console.Clear();
             ShowMainMenu();
 
-            var input = Console.ReadLine()?.Trim();
+            var input = ConsoleInputHelper.ReadOptional("\nEnter your choice: ");
 
             switch (input)
             {
@@ -43,12 +45,12 @@ public class AppNavigator
                     break;
 
                 case "3":
-                    Console.WriteLine("\nExiting the application. Goodbye.");
+                    ConsoleOutputHelper.PrintInfo("\nExiting the application. Goodbye.");
                     exitRequested = true;
                     break;
 
                 default:
-                    Console.WriteLine("\nInvalid option. Please try again.");
+                    ConsoleOutputHelper.PrintError("\nInvalid option. Please try again.");
                     await Task.Delay(1500);
                     break;
             }
@@ -66,18 +68,17 @@ public class AppNavigator
                 await _adminDashboard.ShowAsync();
                 break;
             default:
-                Console.WriteLine("\nUnknown role. Access denied.");
-                Console.ReadLine();
+                ConsoleOutputHelper.PrintError("\nUnknown role. Access denied.");
+                ConsoleInputHelper.ReadOptional("Press Enter to return...");
                 break;
         }
     }
 
     private void ShowMainMenu()
     {
-        Console.WriteLine("=== Welcome to NewsSync ===");
-        Console.WriteLine("1. Login");
-        Console.WriteLine("2. Sign Up");
-        Console.WriteLine("3. Exit");
-        Console.Write("\nEnter your choice: ");
+        ConsoleOutputHelper.PrintHeader("Welcome to NewsSync");
+        ConsoleOutputHelper.PrintInfo("1. Login");
+        ConsoleOutputHelper.PrintInfo("2. Sign Up");
+        ConsoleOutputHelper.PrintInfo("3. Exit");
     }
 }

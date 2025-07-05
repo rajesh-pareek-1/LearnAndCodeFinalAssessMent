@@ -1,5 +1,6 @@
 using NewsSyncClient.Core.Interfaces;
 using NewsSyncClient.Core.Interfaces.Screens;
+using NewsSyncClient.Presentation.Helpers;
 
 namespace NewsSyncClient.Presentation.Screens;
 
@@ -29,15 +30,14 @@ public class UserDashboardScreen
             Console.Clear();
             RenderHeader();
 
-            Console.WriteLine("Please choose an option:");
-            Console.WriteLine("1. Headlines");
-            Console.WriteLine("2. Saved Articles");
-            Console.WriteLine("3. Search Articles");
-            Console.WriteLine("4. Notifications");
-            Console.WriteLine("5. Logout");
-            Console.Write("\nEnter your choice: ");
+            ConsoleOutputHelper.PrintInfo("Please choose an option:");
+            ConsoleOutputHelper.PrintInfo("1. Headlines");
+            ConsoleOutputHelper.PrintInfo("2. Saved Articles");
+            ConsoleOutputHelper.PrintInfo("3. Search Articles");
+            ConsoleOutputHelper.PrintInfo("4. Notifications");
+            ConsoleOutputHelper.PrintInfo("5. Logout");
 
-            var input = Console.ReadLine()?.Trim();
+            var input = ConsoleInputHelper.ReadOptional("\nEnter your choice: ")?.Trim();
 
             switch (input)
             {
@@ -58,28 +58,25 @@ public class UserDashboardScreen
                     exit = true;
                     break;
                 default:
-                    Console.WriteLine("Invalid input. Try again.");
+                    ConsoleOutputHelper.PrintWarning("Invalid input. Try again.");
                     break;
             }
 
             if (!exit)
-            {
-                Console.WriteLine("\nPress Enter to return to the dashboard...");
-                Console.ReadLine();
-            }
+                ConsoleInputHelper.ReadOptional("\nPress Enter to return to the dashboard...");
         }
     }
 
     private void RenderHeader()
     {
-        Console.WriteLine($"Welcome, {_session.Email}");
-        Console.WriteLine($"Date: {DateTime.Now:dd-MMM-yyyy}");
-        Console.WriteLine($"Time: {DateTime.Now:hh:mm tt}\n");
+        ConsoleOutputHelper.PrintHeader($"Welcome, {_session.Email}");
+        ConsoleOutputHelper.PrintInfo($"Date: {DateTime.Now:dd-MMM-yyyy}");
+        ConsoleOutputHelper.PrintInfo($"Time: {DateTime.Now:hh:mm tt}\n");
     }
 
     private void PerformLogout()
     {
         _session.Clear();
-        Console.WriteLine("You have been logged out.");
+        ConsoleOutputHelper.PrintSuccess("You have been logged out.");
     }
 }

@@ -2,6 +2,7 @@ using NewsSyncClient.Core.Exceptions;
 using NewsSyncClient.Core.Interfaces.Prompts;
 using NewsSyncClient.Core.Interfaces.Services;
 using NewsSyncClient.Core.Models.Articles;
+using NewsSyncClient.Presentation.Helpers;
 
 namespace NewsSyncClient.Presentation.Prompts;
 
@@ -16,24 +17,29 @@ public class SearchArticlesPrompt : ISearchArticlesPrompt
 
     public async Task PromptToSaveAsync(List<ArticleDto> articles)
     {
-        Console.Write("\nDo you want to save an article? (y/n): ");
-        var decision = Console.ReadLine()?.Trim().ToLower();
+        try
+        {
+            if (!ConsoleInputHelper.Confirm("\nDo you want to save an article?")) return;
 
-        if (decision != "y") return;
+            var articleId = ConsoleInputHelper.ReadPositiveInt("Enter Article ID to save: ");
 
-        Console.Write("Enter Article ID to save: ");
-        var input = Console.ReadLine();
+            if (!articles.Any(a => a.Id == articleId))
+                throw new UserInputException($"No article found with ID: {articleId}");
 
-        if (string.IsNullOrWhiteSpace(input))
-            throw new UserInputException("Article ID input cannot be empty.");
-
-        if (!int.TryParse(input, out var id))
-            throw new UserInputException("Invalid number format. Please enter a numeric Article ID.");
-
-        if (!articles.Any(a => a.Id == id))
-            throw new UserInputException($"No article found with ID: {id}");
-
-        await _savedService.SaveArticleAsync(id);
-        Console.WriteLine("Article saved successfully.");
+            await _savedService.SaveArticleAsync(articleId);
+            ConsoleOutputHelper.PrintSuccess("Article saved successfully.");
+        }
+        catch (UserInputException ex)
+        {
+            ConsoleOutputHelper.PrintError($"Input Error: {ex.Message}");
+        }
+        catch (ValidationException ex)
+        {
+            ConsoleOutputHelper.PrintError($"Validation Error: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            ConsoleOutputHelper.PrintError($"Unexpected error: {ex.Message}");
+        }
     }
 }

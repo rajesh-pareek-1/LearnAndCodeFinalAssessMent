@@ -2,6 +2,9 @@ using NewsSyncClient.Core.Interfaces.Prompts;
 using NewsSyncClient.Core.Interfaces.Renderer;
 using NewsSyncClient.Core.Interfaces.Screens;
 using NewsSyncClient.Core.Interfaces.UseCases;
+using NewsSyncClient.Presentation.Helpers;
+
+namespace NewsSyncClient.Presentation.Screens;
 
 public class HeadlinesScreen : IHeadlinesScreen
 {
@@ -27,26 +30,24 @@ public class HeadlinesScreen : IHeadlinesScreen
 
         while (true)
         {
-             RenderActionMenu();
-            var userSelection = Console.ReadLine();
+            RenderActionMenu();
+            var userSelection = ConsoleInputHelper.ReadOptional(""); // inline prompt is handled in RenderActionMenu()
 
             if (userSelection == "3") return;
 
             if (navigationOptions.TryGetValue(userSelection ?? string.Empty, out var selectedAction))
                 await selectedAction();
             else
-                Console.WriteLine("Invalid selection. Please try again.");
+                ConsoleOutputHelper.PrintError("Invalid selection. Please try again.");
 
-            Console.WriteLine("\nPress Enter to continue...");
-            Console.ReadLine();
+            ConsoleInputHelper.WaitForUser();
         }
     }
 
     private async Task ShowWithCustomDateRangeAsync()
     {
         var (startDate, endDate) = ConsoleInputHelper.ReadDateRange();
-        if (startDate != null && endDate != null)
-            await ShowByDateAsync(startDate.Value, endDate.Value);
+        await ShowByDateAsync(startDate, endDate);
     }
 
     private async Task ShowByDateAsync(DateTime from, DateTime to)
@@ -56,7 +57,7 @@ public class HeadlinesScreen : IHeadlinesScreen
 
         if (!articles.Any())
         {
-            Console.WriteLine("No articles found for the selected date range and category.");
+            ConsoleOutputHelper.PrintWarning("No articles found for the selected date range and category.");
             return;
         }
 
@@ -70,24 +71,24 @@ public class HeadlinesScreen : IHeadlinesScreen
 
         if (!availableCategories.Any())
         {
-            Console.WriteLine("No categories are currently available.");
+            ConsoleOutputHelper.PrintWarning("No categories are currently available.");
             return null;
         }
 
-        Console.WriteLine("\nAvailable Categories:");
+        ConsoleOutputHelper.PrintHeading("Available Categories:");
         foreach (var category in availableCategories)
-            Console.WriteLine($"- {category.Name}");
+            ConsoleOutputHelper.PrintInfo($"- {category.Name}");
 
         return ConsoleInputHelper.ReadOptional("Enter a category (or leave blank to include all): ");
     }
 
-    private void  RenderActionMenu()
+    private void RenderActionMenu()
     {
         Console.Clear();
-        Console.WriteLine("=== Headlines ===");
-        Console.WriteLine("1. View Today's Headlines");
-        Console.WriteLine("2. View Headlines by Date Range");
-        Console.WriteLine("3. Back");
-        Console.Write("Select an option: ");
+        ConsoleOutputHelper.PrintHeading("Headlines");
+        ConsoleOutputHelper.PrintInfo("1. View Today's Headlines");
+        ConsoleOutputHelper.PrintInfo("2. View Headlines by Date Range");
+        ConsoleOutputHelper.PrintInfo("3. Back");
+        ConsoleOutputHelper.PrintInfo("Select an option: ", inline: true);
     }
 }

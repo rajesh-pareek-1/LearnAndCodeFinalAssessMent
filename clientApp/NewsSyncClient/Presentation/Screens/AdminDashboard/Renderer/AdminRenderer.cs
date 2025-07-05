@@ -1,4 +1,5 @@
 using NewsSyncClient.Core.Models.Admin;
+using NewsSyncClient.Presentation.Helpers;
 
 namespace NewsSyncClient.Presentation.Screens;
 
@@ -6,34 +7,37 @@ public class AdminRenderer : IAdminRenderer
 {
     public void RenderHeader(string email)
     {
-        Console.WriteLine($"Welcome Admin, {email}");
-        Console.WriteLine($"Date: {DateTime.Now:dd-MMM-yyyy} | Time: {DateTime.Now:hh:mm tt}\n");
+        ConsoleOutputHelper.PrintInfo($"Welcome Admin, {email}");
+        ConsoleOutputHelper.PrintInfo($"Date: {DateTime.Now:dd-MMM-yyyy} | Time: {DateTime.Now:hh:mm tt}");
+        ConsoleOutputHelper.PrintDivider();
     }
 
     public void RenderMenu()
     {
-        Console.WriteLine("1. View Server Statuses");
-        Console.WriteLine("2. View Server Details");
-        Console.WriteLine("3. Update Server API Key");
-        Console.WriteLine("4. Add New News Category");
-        Console.WriteLine("5. Logout");
-        Console.Write("\nEnter your choice: ");
+        ConsoleOutputHelper.PrintDivider();
+        ConsoleOutputHelper.PrintInfo("1. View Server Statuses");
+        ConsoleOutputHelper.PrintInfo("2. View Server Details");
+        ConsoleOutputHelper.PrintInfo("3. Update Server API Key");
+        ConsoleOutputHelper.PrintInfo("4. Add New News Category");
+        ConsoleOutputHelper.PrintInfo("5. Logout");
+        ConsoleOutputHelper.PrintInfo(""); // for spacing
+        ConsoleOutputHelper.PrintInfo("Enter your choice: ", inline: true);
     }
 
     public Task RenderServerStatusesAsync(List<ServerStatusDto> servers)
     {
         if (servers.Count == 0)
         {
-            Console.WriteLine("No servers found.");
+            ConsoleOutputHelper.PrintWarning("No servers found.");
             return Task.CompletedTask;
         }
 
-        Console.WriteLine("\nServer Statuses:");
+        ConsoleOutputHelper.PrintHeading("Server Statuses:");
         foreach (var s in servers)
         {
-            Console.WriteLine($"Uptime: {s.Uptime}");
-            Console.WriteLine($"Last Accessed: {s.LastAccessed:dd-MMM-yyyy hh:mm tt}");
-            Console.WriteLine(new string('-', 40));
+            ConsoleOutputHelper.PrintInfo($"Uptime: {s.Uptime}");
+            ConsoleOutputHelper.PrintInfo($"Last Accessed: {s.LastAccessed:dd-MMM-yyyy hh:mm tt}");
+            ConsoleOutputHelper.PrintDivider();
         }
 
         return Task.CompletedTask;
@@ -43,17 +47,17 @@ public class AdminRenderer : IAdminRenderer
     {
         if (details.Count == 0)
         {
-            Console.WriteLine("No server details available.");
+            ConsoleOutputHelper.PrintWarning("No server details available.");
             return Task.CompletedTask;
         }
 
-        Console.WriteLine("\nServer Details:");
+        ConsoleOutputHelper.PrintHeading("Server Details:");
         foreach (var d in details)
         {
-            Console.WriteLine($"ID: {d.Id}");
-            Console.WriteLine($"Server: {d.ServerName}");
-            Console.WriteLine($"API Key: {d.ApiKey}");
-            Console.WriteLine(new string('-', 40));
+            ConsoleOutputHelper.PrintInfo($"ID: {d.Id}");
+            ConsoleOutputHelper.PrintInfo($"Server: {d.ServerName}");
+            ConsoleOutputHelper.PrintInfo($"API Key: {d.ApiKey}");
+            ConsoleOutputHelper.PrintDivider();
         }
 
         return Task.CompletedTask;

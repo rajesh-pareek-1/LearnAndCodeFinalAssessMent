@@ -1,5 +1,6 @@
 using NewsSyncClient.Core.Exceptions;
 using NewsSyncClient.Core.Interfaces;
+using NewsSyncClient.Presentation.Helpers;
 
 namespace NewsSyncClient.Presentation.Screens;
 
@@ -15,41 +16,39 @@ public class LoginScreen
     public async Task<bool> ShowAsync()
     {
         Console.Clear();
-        Console.WriteLine("=== Login ===\n");
+        ConsoleOutputHelper.PrintHeader("Login");
+
+        var username = ConsoleInputHelper.ReadRequiredString("Username: ");
+        var password = ConsoleInputHelper.ReadRequiredString("Password: ");
 
         try
         {
-            var email = Prompt("Email: ");
-            var password = Prompt("Password: ");
-
-            if (string.IsNullOrWhiteSpace(email))
-                throw new UserInputException("Email cannot be empty.");
-
-            if (string.IsNullOrWhiteSpace(password))
-                throw new UserInputException("Password cannot be empty.");
-
-            var success = await _authService.LoginAsync(email, password);
-
-            if (!success)
+            var success = await _authService.LoginAsync(username, password);
+            if (success)
             {
-                Console.WriteLine("\nLogin failed. Press Enter to return.");
-                Console.ReadLine();
+                ConsoleOutputHelper.PrintSuccess("Login successful!");
+                ConsoleInputHelper.WaitForUser();
+                return true;
             }
-
-            return success;
+            else
+            {
+                ConsoleOutputHelper.PrintError("Invalid username or password.");
+                ConsoleInputHelper.WaitForUser();
+                return false;
+            }
         }
-        catch (UserInputException ex)
+        catch (ValidationException ex)
         {
-            Console.WriteLine($"\n {ex.Message}");
-            Console.WriteLine("Press Enter to return.");
-            Console.ReadLine();
+            ConsoleOutputHelper.PrintError(ex.Message);
+            ConsoleInputHelper.WaitForUser();
             return false;
         }
-    }
-
-    private string Prompt(string label)
-    {
-        Console.Write(label);
-        return Console.ReadLine()?.Trim() ?? string.Empty;
+        catch (Exception ex)
+        {
+            ConsoleOutputHelper.PrintError("An unexpected error occurred.");
+            ConsoleOutputHelper.PrintDebug(ex.ToString());
+            ConsoleInputHelper.WaitForUser();
+            return false;
+        }
     }
 }
