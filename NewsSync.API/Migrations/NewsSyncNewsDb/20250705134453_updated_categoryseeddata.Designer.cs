@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NewsSync.API.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using NewsSync.API.Infrastructure.Data;
 namespace NewsSync.API.Migrations.NewsSyncNewsDb
 {
     [DbContext(typeof(NewsSyncNewsDbContext))]
-    partial class NewsSyncNewsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250705134453_updated_categoryseeddata")]
+    partial class updated_categoryseeddata
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

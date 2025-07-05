@@ -21,7 +21,25 @@ namespace NewsSync.API.Infrastructure.Data.Seed
         {
             modelBuilder.Entity<Category>().HasData(
                 new Category { Id = 1, Name = "Technology", Description = "Tech News" },
-                new Category { Id = 2, Name = "Sports", Description = "Sports News" }
+                new Category { Id = 2, Name = "Sports", Description = "Sports News" },
+                new Category { Id = 3, Name = "Health", Description = "Health & Wellness" },
+                new Category { Id = 4, Name = "Business", Description = "Business and Finance" },
+                new Category { Id = 5, Name = "Entertainment", Description = "Movies, Music & Celebs" },
+                new Category { Id = 6, Name = "Politics", Description = "Political News" },
+                new Category { Id = 7, Name = "Science", Description = "Scientific Discoveries" },
+                new Category { Id = 8, Name = "World", Description = "Global News" },
+                new Category { Id = 9, Name = "Education", Description = "Education & Learning" },
+                new Category { Id = 10, Name = "Environment", Description = "Environmental Issues" },
+                new Category { Id = 11, Name = "Travel", Description = "Travel & Tourism" },
+                new Category { Id = 12, Name = "Food", Description = "Food & Cooking" },
+                new Category { Id = 13, Name = "Art", Description = "Art & Creativity" },
+                new Category { Id = 14, Name = "Fashion", Description = "Fashion & Style" },
+                new Category { Id = 15, Name = "Crime", Description = "Crime & Justice" },
+                new Category { Id = 16, Name = "Opinion", Description = "Editorial Opinions" },
+                new Category { Id = 17, Name = "Economy", Description = "Economics & Markets" },
+                new Category { Id = 18, Name = "Automotive", Description = "Cars & Automobiles" },
+                new Category { Id = 19, Name = "Religion", Description = "Religion & Spirituality" },
+                new Category { Id = 20, Name = "Culture", Description = "Culture & Society" }
             );
         }
 

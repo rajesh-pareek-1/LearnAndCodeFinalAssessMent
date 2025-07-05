@@ -3,6 +3,7 @@ using NewsSync.API.Application.Interfaces.Services;
 using NewsSync.API.Domain.Entities;
 using NewsSync.API.Domain.Common.Messages;
 using NewsSync.API.Infrastructure.Data;
+using NewsSync.API.Application.DTOs;
 
 public class NewsFetcherBackgroundService : BackgroundService
 {
@@ -42,6 +43,9 @@ public class NewsFetcherBackgroundService : BackgroundService
         var newsDb = scope.ServiceProvider.GetRequiredService<NewsSyncNewsDbContext>();
         var articleStorage = scope.ServiceProvider.GetRequiredService<IArticleStorageService>();
         var notifier = scope.ServiceProvider.GetRequiredService<IUserArticleNotifierService>();
+        var articleCategoryService = scope.ServiceProvider.GetRequiredService<IArticleCategoryService>();
+
+        var articleCategories = await articleCategoryService.GetAllCategoriesAsync();
 
         var servers = await LoadAllServersAsync(newsDb);
 
@@ -49,7 +53,7 @@ public class NewsFetcherBackgroundService : BackgroundService
         {
             if (!TryGetAdapter(server.ServerName, out var adapter)) continue;
 
-            var articles = await FetchArticlesAsync(adapter, server);
+            var articles = await FetchArticlesAsync(adapter, server, articleCategories);
             if (articles.Count == 0) continue;
 
             await StoreArticlesAsync(articleStorage, server, articles);
@@ -70,11 +74,11 @@ public class NewsFetcherBackgroundService : BackgroundService
         return false;
     }
 
-    private async Task<List<Article>> FetchArticlesAsync(INewsAdapter adapter, ServerDetail server)
+    private async Task<List<Article>> FetchArticlesAsync(INewsAdapter adapter, ServerDetail server, List<CategoryResponseDto> categories)
     {
         try
         {
-            var articles = await adapter.FetchArticlesAsync(server.BaseUrl, server.ApiKey);
+            var articles = await adapter.FetchArticlesAsync(server.BaseUrl, server.ApiKey, categories);
             logger.LogInformation("Fetched {Count} articles from {Server}", articles.Count, server.ServerName);
             return articles;
         }

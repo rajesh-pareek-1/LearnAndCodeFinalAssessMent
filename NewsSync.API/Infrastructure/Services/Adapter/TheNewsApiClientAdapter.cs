@@ -1,6 +1,8 @@
 using System.Text.Json;
 using NewsSync.API.Domain.Entities;
 using NewsSync.API.Application.Interfaces.Services;
+using NewsSync.API.Application.DTOs;
+using NewsSync.API.Application.Services;
 
 public class TheNewsApiClientAdapter : INewsAdapter
 {
@@ -13,7 +15,7 @@ public class TheNewsApiClientAdapter : INewsAdapter
         this.logger = logger;
     }
 
-    public async Task<List<Article>> FetchArticlesAsync(string baseUrl, string apiKey)
+    public async Task<List<Article>> FetchArticlesAsync(string baseUrl, string apiKey, List<CategoryResponseDto> categories)
     {
         try
         {
@@ -24,7 +26,7 @@ public class TheNewsApiClientAdapter : INewsAdapter
             response.EnsureSuccessStatusCode();
             var json = await response.Content.ReadAsStringAsync();
 
-            return ParseArticles(json);
+            return ParseArticles(json, categories);
         }
         catch (Exception ex)
         {
@@ -45,7 +47,7 @@ public class TheNewsApiClientAdapter : INewsAdapter
         return request;
     }
 
-    private static List<Article> ParseArticles(string json)
+    private static List<Article> ParseArticles(string json, List<CategoryResponseDto> categories)
     {
         var articles = new List<Article>();
 
@@ -56,15 +58,15 @@ public class TheNewsApiClientAdapter : INewsAdapter
 
         foreach (var item in data.EnumerateArray())
         {
-            articles.Add(MapToArticle(item));
+            articles.Add(MapToArticle(item, categories));
         }
 
         return articles;
     }
 
-    private static Article MapToArticle(JsonElement item)
+    private static Article MapToArticle(JsonElement item, List<CategoryResponseDto> categories)
     {
-        return new Article
+        var article = new Article
         {
             Headline = item.GetProperty("title").GetString() ?? "",
             Description = item.GetProperty("description").GetString() ?? "",
@@ -73,8 +75,12 @@ public class TheNewsApiClientAdapter : INewsAdapter
             AuthorName = item.TryGetProperty("author", out var author) ? author.GetString() ?? "Unknown" : "Unknown",
             ImageUrl = item.GetProperty("image_url").GetString() ?? "",
             Language = item.GetProperty("language").GetString() ?? "en",
-            PublishedDate = item.GetProperty("published_at").GetString() ?? DateTime.UtcNow.ToString("o"),
-            CategoryId = 1
+            PublishedDate = item.GetProperty("published_at").GetString() ?? DateTime.UtcNow.ToString("o")
         };
+
+        var matchedCategory = ArticleCategoryPredictor.PredictCategory(article, categories);
+        article.CategoryId = matchedCategory.Id;
+
+        return article;
     }
 }

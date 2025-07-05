@@ -1,6 +1,8 @@
 using System.Text.Json;
 using NewsSync.API.Domain.Entities;
 using NewsSync.API.Application.Interfaces.Services;
+using NewsSync.API.Application.DTOs;
+using NewsSync.API.Application.Services;
 
 public class NewsApiOrgClientAdapter : INewsAdapter
 {
@@ -13,7 +15,7 @@ public class NewsApiOrgClientAdapter : INewsAdapter
         this.logger = logger;
     }
 
-    public async Task<List<Article>> FetchArticlesAsync(string baseUrl, string apiKey)
+    public async Task<List<Article>> FetchArticlesAsync(string baseUrl, string apiKey, List<CategoryResponseDto> categories)
     {
         var requestUrl = BuildRequestUrl(baseUrl, apiKey);
         var request = BuildHttpRequest(requestUrl);
@@ -25,7 +27,7 @@ public class NewsApiOrgClientAdapter : INewsAdapter
 
             var json = await response.Content.ReadAsStringAsync();
 
-            return ParseArticlesFromJson(json);
+            return ParseArticlesFromJson(json, categories);
         }
         catch (Exception ex)
         {
@@ -46,19 +48,19 @@ public class NewsApiOrgClientAdapter : INewsAdapter
         return request;
     }
 
-    private static List<Article> ParseArticlesFromJson(string json)
+    private static List<Article> ParseArticlesFromJson(string json, List<CategoryResponseDto> categories)
     {
         var parsed = JsonSerializer.Deserialize<NewsApiOrgResponse>(json, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         });
 
-        return parsed?.Articles?.Select(MapToArticle).ToList() ?? [];
+        return parsed?.Articles?.Select(a => MapToArticle(a, categories)).ToList() ?? [];
     }
 
-    private static Article MapToArticle(NewsApiOrgResponse.NewsApiArticle a)
+    private static Article MapToArticle(NewsApiOrgResponse.NewsApiArticle a, List<CategoryResponseDto> categories)
     {
-        return new Article
+        var article = new Article
         {
             Headline = a.Title ?? "",
             Description = a.Description ?? "",
@@ -67,9 +69,14 @@ public class NewsApiOrgClientAdapter : INewsAdapter
             AuthorName = a.Author ?? "",
             ImageUrl = a.UrlToImage ?? "",
             Language = "en",
-            PublishedDate = a.PublishedAt ?? "",
-            CategoryId = 1 
+            PublishedDate = a.PublishedAt ?? ""
         };
+
+        var matchedCategory = ArticleCategoryPredictor.PredictCategory(article, categories);
+        article.CategoryId = matchedCategory.Id;
+
+        return article;
+
     }
 
     private class NewsApiOrgResponse
