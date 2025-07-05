@@ -2,6 +2,7 @@ using NewsSyncClient.Core.Interfaces.Prompts;
 using NewsSyncClient.Core.Interfaces.Renderer;
 using NewsSyncClient.Core.Interfaces.Screens;
 using NewsSyncClient.Core.Interfaces.UseCases;
+using NewsSyncClient.Presentation.Helpers;
 
 public class NotificationsScreen : INotificationsScreen
 {
@@ -31,21 +32,19 @@ public class NotificationsScreen : INotificationsScreen
         {
             _renderer.RenderHeader();
 
-            Console.WriteLine("1. View Notifications");
-            Console.WriteLine("2. Configure Notifications");
-            Console.WriteLine("3. Back");
-            Console.Write("\nEnter your choice: ");
-            var choice = Console.ReadLine()?.Trim();
+            ConsoleOutputHelper.PrintInfo("1. View Notifications");
+            ConsoleOutputHelper.PrintInfo("2. Configure Notifications");
+            ConsoleOutputHelper.PrintInfo("3. Back");
 
+            var choice = ConsoleInputHelper.ReadOptional("\nEnter your choice: ");
             if (choice == "3") return;
 
             if (menuActions.TryGetValue(choice ?? "", out var action))
                 await action();
             else
-                Console.WriteLine("Invalid option. Try again.");
+                ConsoleOutputHelper.PrintError("Invalid option. Try again.");
 
-            Console.WriteLine("\nPress Enter to continue...");
-            Console.ReadLine();
+            ConsoleInputHelper.ReadOptional("\nPress Enter to continue...");
         }
     }
 
@@ -55,7 +54,7 @@ public class NotificationsScreen : INotificationsScreen
 
         if (!notifications.Any())
         {
-            Console.WriteLine("\nNo notifications found.");
+            ConsoleOutputHelper.PrintWarning("No notifications found.");
             return;
         }
 
@@ -68,7 +67,7 @@ public class NotificationsScreen : INotificationsScreen
 
         if (!categories.Any())
         {
-            Console.WriteLine("\nNo categories available.");
+            ConsoleOutputHelper.PrintWarning("No categories available.");
             return;
         }
 
@@ -78,6 +77,10 @@ public class NotificationsScreen : INotificationsScreen
         if (string.IsNullOrWhiteSpace(categoryName)) return;
 
         var result = await _configureUseCase.UpdateCategoryPreferenceAsync(categoryName, isEnabled);
-        Console.WriteLine(result ? "Notification preferences updated." : "Failed to update preferences.");
+
+        if (result)
+            ConsoleOutputHelper.PrintSuccess("Notification preferences updated.");
+        else
+            ConsoleOutputHelper.PrintError("Failed to update preferences.");
     }
 }

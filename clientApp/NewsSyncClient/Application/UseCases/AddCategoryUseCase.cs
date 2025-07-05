@@ -1,6 +1,7 @@
 using NewsSyncClient.Core.Exceptions;
 using NewsSyncClient.Core.Interfaces.Services;
 using NewsSyncClient.Core.Interfaces.UseCases;
+using NewsSyncClient.Presentation.Helpers;
 
 namespace NewsSyncClient.Application.UseCases;
 
@@ -17,26 +18,23 @@ public class AddCategoryUseCase : IAddCategoryUseCase
     {
         try
         {
-            Console.Write("Enter category name: ");
-            var name = Console.ReadLine()?.Trim();
-
-            Console.Write("Enter description: ");
-            var desc = Console.ReadLine()?.Trim();
-
-            if (string.IsNullOrWhiteSpace(name))
-                throw new UserInputException("Category name is required.");
+            var name = ConsoleInputHelper.ReadRequiredString("Enter category name: ");
+            var desc = ConsoleInputHelper.ReadOptional("Enter description: ");
 
             var success = await _service.AddCategoryAsync(name, desc ?? string.Empty);
 
-            Console.WriteLine(success ? "Category added." : "Failed to add category.");
+            if (success)
+                ConsoleOutputHelper.PrintSuccess("Category added successfully.");
+            else
+                ConsoleOutputHelper.PrintError("Failed to add category.");
         }
         catch (UserInputException ex)
         {
-            Console.WriteLine($"Input Error: {ex.Message}");
+            ConsoleOutputHelper.PrintWarning($"Input Error: {ex.Message}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Unexpected error: {ex.Message}");
+            ConsoleOutputHelper.PrintError($"Unexpected error: {ex.Message}");
         }
     }
 }

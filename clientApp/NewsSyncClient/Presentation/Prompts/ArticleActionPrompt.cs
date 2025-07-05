@@ -2,6 +2,7 @@ using NewsSyncClient.Core.Exceptions;
 using NewsSyncClient.Core.Interfaces.Prompts;
 using NewsSyncClient.Core.Interfaces.Renderer;
 using NewsSyncClient.Core.Models.Articles;
+using NewsSyncClient.Presentation.Helpers;
 
 namespace NewsSyncClient.Presentation.Prompts;
 
@@ -25,12 +26,7 @@ public class ArticleActionPrompt : IArticleActionPrompt
             ["3"] = () => HandleErrorsAsync(() => ExecuteForArticleAsync(articles, id => _articleService.ReactToArticleAsync(id, false), "Article disliked.")),
             ["4"] = () => HandleErrorsAsync(async () =>
             {
-                Console.Write("Enter reason for report: ");
-                var reason = Console.ReadLine();
-
-                if (string.IsNullOrWhiteSpace(reason))
-                    throw new UserInputException("Report reason cannot be empty.");
-
+                var reason = ConsoleInputHelper.ReadRequiredString("Enter reason for report: ");
                 await ExecuteForArticleAsync(articles, id => _articleService.ReportArticleAsync(id, reason), "Article reported.");
             }),
             ["5"] = () => RenderFilteredAsync(articles, a => a.IsLiked, "Liked Articles"),
@@ -41,30 +37,26 @@ public class ArticleActionPrompt : IArticleActionPrompt
         while (true)
         {
             RenderActionMenu();
-            var input = Console.ReadLine();
+            var input = ConsoleInputHelper.ReadOptional("Select an action: ");
 
             if (input == "7") return;
 
             if (menuActions.TryGetValue(input ?? string.Empty, out var selectedAction))
                 await selectedAction();
             else
-                Console.WriteLine("Invalid option. Please try again.");
+                ConsoleOutputHelper.PrintError("Invalid option. Please try again.");
         }
     }
 
     private async Task ExecuteForArticleAsync(List<ArticleDto> articles, Func<int, Task> action, string confirmationMessage)
     {
-        Console.Write("Enter Article ID: ");
-        var input = Console.ReadLine();
-
-        if (!int.TryParse(input, out var articleId))
-            throw new UserInputException("Article ID must be a valid number.");
+        var articleId = ConsoleInputHelper.ReadPositiveInt("Enter Article ID: ");
 
         if (!articles.Any(a => a.Id == articleId))
             throw new UserInputException($"No article found with ID {articleId}.");
 
         await action(articleId);
-        Console.WriteLine(confirmationMessage);
+        ConsoleOutputHelper.PrintSuccess(confirmationMessage);
     }
 
     private Task RenderFilteredAsync(List<ArticleDto> articles, Func<ArticleDto, bool> filter, string title)
@@ -74,22 +66,21 @@ public class ArticleActionPrompt : IArticleActionPrompt
             .OrderByDescending(a => a.PublishedDate)
             .ToList();
 
-        Console.WriteLine($"\n{title}\n");
+        ConsoleOutputHelper.PrintHeader(title);
         _articleRenderer.Render(filtered);
         return Task.CompletedTask;
     }
 
     private void RenderActionMenu()
     {
-        Console.WriteLine("\n=== Article Actions ===");
-        Console.WriteLine("1. Save Article");
-        Console.WriteLine("2. Like Article");
-        Console.WriteLine("3. Dislike Article");
-        Console.WriteLine("4. Report Article");
-        Console.WriteLine("5. Show Liked Articles");
-        Console.WriteLine("6. Show Disliked Articles");
-        Console.WriteLine("7. Back");
-        Console.Write("Select an action: ");
+        ConsoleOutputHelper.PrintHeader("Article Actions");
+        ConsoleOutputHelper.PrintInfo("1. Save Article");
+        ConsoleOutputHelper.PrintInfo("2. Like Article");
+        ConsoleOutputHelper.PrintInfo("3. Dislike Article");
+        ConsoleOutputHelper.PrintInfo("4. Report Article");
+        ConsoleOutputHelper.PrintInfo("5. Show Liked Articles");
+        ConsoleOutputHelper.PrintInfo("6. Show Disliked Articles");
+        ConsoleOutputHelper.PrintInfo("7. Back");
     }
 
     private async Task HandleErrorsAsync(Func<Task> action)
@@ -100,15 +91,15 @@ public class ArticleActionPrompt : IArticleActionPrompt
         }
         catch (UserInputException ex)
         {
-            Console.WriteLine($"Input Error: {ex.Message}");
+            ConsoleOutputHelper.PrintError($"Input Error: {ex.Message}");
         }
         catch (ValidationException ex)
         {
-            Console.WriteLine($"Validation Error: {ex.Message}");
+            ConsoleOutputHelper.PrintError($"Validation Error: {ex.Message}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Something went wrong: {ex.Message}");
+            ConsoleOutputHelper.PrintError($"Something went wrong: {ex.Message}");
         }
     }
 }

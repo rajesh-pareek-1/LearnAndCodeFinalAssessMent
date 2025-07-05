@@ -2,6 +2,7 @@ using NewsSyncClient.Core.Interfaces;
 using NewsSyncClient.Core.Interfaces.Renderer;
 using NewsSyncClient.Core.Interfaces.Screens;
 using NewsSyncClient.Core.Interfaces.UseCases;
+using NewsSyncClient.Presentation.Helpers;
 
 namespace NewsSyncClient.Presentation.Screens;
 
@@ -34,7 +35,7 @@ public class AdminDashboardCoordinator : IAdminDashboardCoordinator
             _renderer.RenderHeader(_session.Email);
             _renderer.RenderMenu();
 
-            var choice = Console.ReadLine()?.Trim();
+            var choice = ConsoleInputHelper.ReadOptional("Select an option:")?.Trim();
 
             switch (choice)
             {
@@ -56,16 +57,15 @@ public class AdminDashboardCoordinator : IAdminDashboardCoordinator
 
                 case "5":
                     _session.Clear();
-                    Console.WriteLine("Logged out.");
+                    ConsoleOutputHelper.PrintInfo("Logged out.");
                     return;
 
                 default:
-                    Console.WriteLine("Invalid option.");
+                    ConsoleOutputHelper.PrintWarning("Invalid option. Please select from 1 to 5.");
                     break;
             }
 
-            Console.WriteLine("\nPress Enter to continue...");
-            Console.ReadLine();
+            ConsoleInputHelper.ReadOptional("\nPress Enter to continue...");
         }
     }
 
@@ -80,5 +80,4 @@ public class AdminDashboardCoordinator : IAdminDashboardCoordinator
             _errorRenderer.Render(ex);
         }
     }
-
 }
