@@ -59,6 +59,10 @@ public class NewsFetcherBackgroundService : BackgroundService
             await StoreArticlesAsync(articleStorage, server, articles);
             await NotifyUsersAsync(notifier, articles);
         }
+
+        var preferenceBuilder = scope.ServiceProvider.GetRequiredService<IUserPreferenceBuilderService>();
+        await preferenceBuilder.UpdateAllUserPreferencesAsync();
+
     }
 
     private async Task<List<ServerDetail>> LoadAllServersAsync(NewsSyncNewsDbContext dbContext)
@@ -105,7 +109,7 @@ public class NewsFetcherBackgroundService : BackgroundService
     {
         try
         {
-            await notifier.NotifyUsersAsync(articles);
+            //await notifier.NotifyUsersAsync(articles);
         }
         catch (Exception ex)
         {
