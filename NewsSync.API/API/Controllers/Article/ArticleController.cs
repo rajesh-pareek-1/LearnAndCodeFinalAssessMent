@@ -25,16 +25,16 @@ namespace NewsSync.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetArticles([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate, [FromQuery] string? query)
+        public async Task<IActionResult> GetArticles([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate, [FromQuery] string? query, [FromQuery] string? userId)
         {
-            var articles = await articleService.GetFilteredArticlesAsync(fromDate, toDate, query);
+            var articles = await articleService.GetFilteredArticlesAsync(fromDate, toDate, query, userId);
             return Ok(mapper.Map<List<ArticleResponseDto>>(articles));
         }
 
         [HttpGet("search")]
-        public async Task<IActionResult> SearchArticles([FromQuery] string query)
+        public async Task<IActionResult> SearchArticles([FromQuery] string query, [FromQuery] string? userId)
         {
-            var articles = await articleService.SearchArticlesAsync(query);
+            var articles = await articleService.SearchArticlesAsync(query, userId);
             return Ok(mapper.Map<List<ArticleResponseDto>>(articles));
         }
 

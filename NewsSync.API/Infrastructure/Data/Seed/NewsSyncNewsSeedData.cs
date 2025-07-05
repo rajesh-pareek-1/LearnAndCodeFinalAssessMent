@@ -15,6 +15,14 @@ namespace NewsSync.API.Infrastructure.Data.Seed
             SeedServerDetails(modelBuilder);
             SeedKeywords(modelBuilder);
             ConfigureRelationships(modelBuilder);
+            SeedUserPreferences(modelBuilder);
+        }
+
+        private static void SeedUserPreferences(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<UserPreference>()
+            .HasIndex(p => new { p.UserId, p.CategoryId })
+            .IsUnique();
         }
 
         private static void SeedCategories(ModelBuilder modelBuilder)

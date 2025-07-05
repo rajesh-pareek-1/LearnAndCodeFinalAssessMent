@@ -17,6 +17,7 @@ namespace NewsSync.API.Infrastructure.Data
         public DbSet<Keyword> Keywords { get; set; }
         public DbSet<ArticleReport> ArticleReports { get; set; }
         public DbSet<ArticleReaction> ArticleReactions { get; set; }
+        public DbSet<UserPreference> UserPreferences { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
