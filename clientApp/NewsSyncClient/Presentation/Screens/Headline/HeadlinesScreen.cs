@@ -31,7 +31,7 @@ public class HeadlinesScreen : IHeadlinesScreen
         while (true)
         {
             RenderActionMenu();
-            var userSelection = ConsoleInputHelper.ReadOptional(""); // inline prompt is handled in RenderActionMenu()
+            var userSelection = ConsoleInputHelper.ReadOptional("");
 
             if (userSelection == "3") return;
 
@@ -52,8 +52,7 @@ public class HeadlinesScreen : IHeadlinesScreen
 
     private async Task ShowByDateAsync(DateTime from, DateTime to)
     {
-        var selectedCategory = await PromptForCategoryAsync();
-        var articles = await _headlineUseCase.ExecuteAsync(from, to, selectedCategory);
+        var articles = await _headlineUseCase.ExecuteAsync(from, to);
 
         if (!articles.Any())
         {
@@ -63,23 +62,6 @@ public class HeadlinesScreen : IHeadlinesScreen
 
         _articleRenderer.Render(articles);
         await _articleActionPrompt.ShowAsync(articles);
-    }
-
-    private async Task<string?> PromptForCategoryAsync()
-    {
-        var availableCategories = await _headlineUseCase.GetCategoriesAsync();
-
-        if (!availableCategories.Any())
-        {
-            ConsoleOutputHelper.PrintWarning("No categories are currently available.");
-            return null;
-        }
-
-        ConsoleOutputHelper.PrintHeading("Available Categories:");
-        foreach (var category in availableCategories)
-            ConsoleOutputHelper.PrintInfo($"- {category.Name}");
-
-        return ConsoleInputHelper.ReadOptional("Enter a category (or leave blank to include all): ");
     }
 
     private void RenderActionMenu()

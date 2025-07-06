@@ -3,6 +3,7 @@ using NewsSyncClient.Core.Interfaces;
 using NewsSyncClient.Core.Interfaces.Api;
 using NewsSyncClient.Core.Models.Articles;
 using NewsSyncClient.Core.Models.Categories;
+using NewsSyncClient.Presentation.Helpers;
 
 namespace NewsSyncClient.Application.Services;
 
@@ -17,14 +18,15 @@ public class ArticleInteractionService : IArticleInteractionService
         _session = session;
     }
 
-    public async Task<List<ArticleDto>> FetchHeadlinesAsync(DateTime from, DateTime to, string? category = null)
+    public async Task<List<ArticleDto>> FetchHeadlinesAsync(DateTime from, DateTime to)
     {
         if (from > to)
             throw new ValidationException("Start date must be earlier than end date.");
 
         var url = $"/api/article?fromDate={from:yyyy-MM-dd}&toDate={to.AddDays(1):yyyy-MM-dd}";
-        if (!string.IsNullOrWhiteSpace(category))
-            url += $"&category={Uri.EscapeDataString(category)}";
+
+        if (!string.IsNullOrWhiteSpace(_session.UserId))
+            url += $"&userId={Uri.EscapeDataString(_session.UserId)}";
 
         var articles = await _apiClient.GetAsync<List<ArticleDto>>(url);
 
@@ -40,6 +42,17 @@ public class ArticleInteractionService : IArticleInteractionService
             {
                 article.IsLiked = likedIds.Contains(article.Id);
                 article.IsDisliked = dislikedIds.Contains(article.Id);
+            }
+        }
+
+        var categories = await FetchCategoriesAsync();
+        var categoryLookup = categories.ToDictionary(c => c.Id, c => c.Name);
+
+        foreach (var article in articles)
+        {
+            if (categoryLookup.TryGetValue(article.CategoryId, out var name))
+            {
+                article.CategoryName = name;
             }
         }
 

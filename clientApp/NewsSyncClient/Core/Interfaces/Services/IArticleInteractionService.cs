@@ -3,7 +3,7 @@ using NewsSyncClient.Core.Models.Categories;
 
 public interface IArticleInteractionService
 {
-    Task<List<ArticleDto>> FetchHeadlinesAsync(DateTime from, DateTime to, string? category);
+    Task<List<ArticleDto>> FetchHeadlinesAsync(DateTime from, DateTime to);
     Task<List<CategoryDto>> FetchCategoriesAsync();
     Task SaveArticleAsync(int articleId);
     Task ReactToArticleAsync(int articleId, bool isLiked);

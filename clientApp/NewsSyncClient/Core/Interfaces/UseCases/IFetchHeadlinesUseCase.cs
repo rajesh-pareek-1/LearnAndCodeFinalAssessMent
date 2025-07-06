@@ -5,6 +5,6 @@ namespace NewsSyncClient.Core.Interfaces.UseCases;
 
 public interface IFetchHeadlinesUseCase
 {
-    Task<List<ArticleDto>> ExecuteAsync(DateTime from, DateTime to, string? category);
+    Task<List<ArticleDto>> ExecuteAsync(DateTime from, DateTime to);
     Task<List<CategoryDto>> GetCategoriesAsync();
 }
