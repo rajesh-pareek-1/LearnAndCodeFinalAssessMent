@@ -7,11 +7,11 @@ namespace NewsSync.API.Infrastructure.Repositories
 {
     public class SavedArticleRepository : ISavedArticleRepository
     {
-        private readonly NewsSyncNewsDbContext db;
+        private readonly NewsSyncNewsDbContext newsDb;
 
-        public SavedArticleRepository(NewsSyncNewsDbContext db)
+        public SavedArticleRepository(NewsSyncNewsDbContext newsDb)
         {
-            this.db = db;
+            this.newsDb = newsDb;
         }
 
         public async Task<List<Article>> GetSavedArticlesByUserIdAsync(string userId)
@@ -19,22 +19,22 @@ namespace NewsSync.API.Infrastructure.Repositories
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
 
-            return await db.SavedArticles
-                .Include(sa => sa.Article)
-                .Where(sa => sa.UserId == userId)
-                .Select(sa => sa.Article)
+            return await newsDb.SavedArticles
+                .Include(savedArticle => savedArticle.Article)
+                .Where(savedArticle => savedArticle.UserId == userId)
+                .Select(savedArticle => savedArticle.Article)
                 .ToListAsync();
         }
 
         public async Task<bool> IsArticleAlreadySavedAsync(string userId, int articleId)
         {
-            return await db.SavedArticles
-                .AnyAsync(sa => sa.UserId == userId && sa.ArticleId == articleId);
+            return await newsDb.SavedArticles
+                .AnyAsync(savedArticle => savedArticle.UserId == userId && savedArticle.ArticleId == articleId);
         }
 
         public async Task<bool> DoesArticleExistAsync(int articleId)
         {
-            return await db.Articles.AnyAsync(a => a.Id == articleId);
+            return await newsDb.Articles.AnyAsync(article => article.Id == articleId);
         }
 
         public async Task SaveAsync(string userId, int articleId)
@@ -48,20 +48,20 @@ namespace NewsSync.API.Infrastructure.Repositories
                 ArticleId = articleId
             };
 
-            await db.SavedArticles.AddAsync(savedArticle);
-            await db.SaveChangesAsync();
+            await newsDb.SavedArticles.AddAsync(savedArticle);
+            await newsDb.SaveChangesAsync();
         }
 
         public async Task<bool> DeleteSavedArticleAsync(string userId, int articleId)
         {
-            var savedArticle = await db.SavedArticles
-                .FirstOrDefaultAsync(sa => sa.UserId == userId && sa.ArticleId == articleId);
+            var savedArticle = await newsDb.SavedArticles
+                .FirstOrDefaultAsync(savedArticle => savedArticle.UserId == userId && savedArticle.ArticleId == articleId);
 
             if (savedArticle == null)
                 return false;
 
-            db.SavedArticles.Remove(savedArticle);
-            await db.SaveChangesAsync();
+            newsDb.SavedArticles.Remove(savedArticle);
+            await newsDb.SaveChangesAsync();
 
             return true;
         }

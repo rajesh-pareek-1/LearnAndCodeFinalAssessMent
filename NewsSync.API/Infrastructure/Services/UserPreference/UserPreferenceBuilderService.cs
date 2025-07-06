@@ -12,12 +12,7 @@ namespace NewsSync.API.Application.Services
         private readonly IUserPreferenceRepository preferenceRepo;
         private readonly ILogger<UserPreferenceBuilderService> logger;
 
-        public UserPreferenceBuilderService(
-            IArticleReactionRepository reactionRepo,
-            ISavedArticleRepository savedRepo,
-            INotificationRepository notificationRepo,
-            IUserPreferenceRepository preferenceRepo,
-            ILogger<UserPreferenceBuilderService> logger)
+        public UserPreferenceBuilderService(IArticleReactionRepository reactionRepo, ISavedArticleRepository savedRepo, INotificationRepository notificationRepo, IUserPreferenceRepository preferenceRepo, ILogger<UserPreferenceBuilderService> logger)
         {
             this.reactionRepo = reactionRepo;
             this.savedRepo = savedRepo;
@@ -45,34 +40,34 @@ namespace NewsSync.API.Application.Services
             var preferences = new Dictionary<int, int>();
 
             var likedArticles = await reactionRepo.GetUserReactionsAsync(userId, isLiked: true);
-            foreach (var r in likedArticles)
+            foreach (var likedArticle in likedArticles)
             {
-                if (r.Article?.CategoryId is int catId)
+                if (likedArticle.Article?.CategoryId is int catId)
                     AddWeight(preferences, catId, 3);
             }
 
             var savedArticles = await savedRepo.GetSavedArticlesByUserIdAsync(userId);
-            foreach (var a in savedArticles)
+            foreach (var article in savedArticles)
             {
-                if (a.CategoryId is int catId)
+                if (article.CategoryId is int catId)
                     AddWeight(preferences, catId, 2);
             }
 
-            var notifConfigs = await notificationRepo.GetNotificationSettingsAsync(userId);
-            foreach (var n in notifConfigs)
+            var notificationConfigurations = await notificationRepo.GetNotificationSettingsAsync(userId);
+            foreach (var notificationConfiguration in notificationConfigurations)
             {
-                AddWeight(preferences, n.CategoryId, 1);
+                AddWeight(preferences, notificationConfiguration.CategoryId, 1);
             }
 
-            var preferenceList = preferences.Select(p => new UserPreference
+            var preferenceList = preferences.Select(userPreference => new UserPreference
             {
                 UserId = userId,
-                CategoryId = p.Key,
-                Weight = p.Value
+                CategoryId = userPreference.Key,
+                Weight = userPreference.Value
             }).ToList();
 
             logger.LogInformation("User {UserId} preferences: {Preferences}", userId,
-                string.Join(", ", preferenceList.Select(p => $"[Cat:{p.CategoryId}, Weight:{p.Weight}]")));
+                string.Join(", ", preferenceList.Select(userPreference => $"[Cat:{userPreference.CategoryId}, Weight:{userPreference.Weight}]")));
 
             return preferenceList;
         }

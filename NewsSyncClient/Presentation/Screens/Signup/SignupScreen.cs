@@ -22,7 +22,7 @@ public class SignupScreen
         try
         {
             var email = ConsoleInputHelper.ReadRequiredString("Email: ");
-            var password = ConsoleInputHelper.ReadRequiredString("Password: ");
+            var password = ConsoleInputHelper.ReadPasswordMasked("Password: ");
 
             var dto = new SignupRequestDto { Username = email, Password = password };
             var (success, message) = await _signupService.RegisterAsync(dto);

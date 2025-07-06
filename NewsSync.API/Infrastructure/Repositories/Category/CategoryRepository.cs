@@ -7,16 +7,16 @@ namespace NewsSync.API.Infrastructure.Repositories
 {
     public class CategoryRepository : ICategoryRepository
     {
-        private readonly NewsSyncNewsDbContext db;
+        private readonly NewsSyncNewsDbContext newsDb;
 
-        public CategoryRepository(NewsSyncNewsDbContext db)
+        public CategoryRepository(NewsSyncNewsDbContext newsDb)
         {
-            this.db = db;
+            this.newsDb = newsDb;
         }
 
         public async Task<List<Category>> GetAllAsync()
         {
-            return await db.Categories
+            return await newsDb.Categories
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -26,12 +26,12 @@ namespace NewsSync.API.Infrastructure.Repositories
             if (category == null)
                 throw new ArgumentNullException(nameof(category));
 
-            await db.Categories.AddAsync(category);
+            await newsDb.Categories.AddAsync(category);
         }
 
         public Task SaveChangesAsync()
         {
-            return db.SaveChangesAsync();
+            return newsDb.SaveChangesAsync();
         }
     }
 }

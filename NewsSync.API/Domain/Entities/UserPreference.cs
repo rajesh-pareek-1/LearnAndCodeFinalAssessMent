@@ -8,5 +8,4 @@ namespace NewsSync.API.Domain.Entities
         public int Weight { get; set; } = 1;
         public Category? Category { get; set; }
     }
-
 }

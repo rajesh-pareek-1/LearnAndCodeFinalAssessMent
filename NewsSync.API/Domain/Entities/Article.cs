@@ -8,32 +8,21 @@ namespace NewsSync.API.Domain.Entities
         [Key]
         public int Id { get; set; }
         public bool IsBlocked { get; set; } = false;
-
         [Required]
         public string Headline { get; set; } = string.Empty;
-
         [Required]
         public string Description { get; set; } = string.Empty;
-
         [Required]
         public string Source { get; set; } = string.Empty;
-
         [Required]
         public string Url { get; set; } = string.Empty;
-
         [ForeignKey(nameof(Category))]
         public int CategoryId { get; set; }
-
         public Category? Category { get; set; }
-
         public string AuthorName { get; set; } = string.Empty;
-
         public string ImageUrl { get; set; } = string.Empty;
-
         public string Language { get; set; } = string.Empty;
-
         public string PublishedDate { get; set; } = string.Empty;
-
         public ICollection<SavedArticle> SavedByUsers { get; set; } = new List<SavedArticle>();
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     }
