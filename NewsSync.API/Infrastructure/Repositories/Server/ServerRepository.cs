@@ -8,63 +8,63 @@ namespace NewsSync.API.Infrastructure.Repositories
 {
     public class ServerRepository : IServerRepository
     {
-        private readonly NewsSyncNewsDbContext db;
+        private readonly NewsSyncNewsDbContext newsDb;
 
-        public ServerRepository(NewsSyncNewsDbContext db)
+        public ServerRepository(NewsSyncNewsDbContext newsDb)
         {
-            this.db = db;
+            this.newsDb = newsDb;
         }
 
         public async Task<List<ServerStatusDto>> GetServerStatusAsync()
         {
-            var servers = await db.ServerDetails
-                .OrderByDescending(s => s.LastAccess)
+            var servers = await newsDb.ServerDetails
+                .OrderByDescending(server => server.LastAccess)
                 .ToListAsync();
 
-            return servers.Select(s => new ServerStatusDto
+            return [.. servers.Select(server => new ServerStatusDto
             {
-                Uptime = DateTime.UtcNow - s.LastAccess,
-                LastAccessed = s.LastAccess
-            }).ToList();
+                Uptime = DateTime.UtcNow - server.LastAccess,
+                LastAccessed = server.LastAccess
+            })];
         }
 
         public async Task<List<ServerDetailsDto>> GetServerDetailsAsync()
         {
-            var servers = await db.ServerDetails
-                .OrderByDescending(s => s.LastAccess)
+            var servers = await newsDb.ServerDetails
+                .OrderByDescending(server => server.LastAccess)
                 .ToListAsync();
 
-            return servers.Select(s => new ServerDetailsDto
+            return [.. servers.Select(server => new ServerDetailsDto
             {
-                Id = s.Id,
-                ServerName = s.ServerName,
-                ApiKey = s.ApiKey
-            }).ToList();
+                Id = server.Id,
+                ServerName = server.ServerName,
+                ApiKey = server.ApiKey
+            })];
         }
 
-        public Task<ServerDetail?> GetByIdAsync(int id)
+        public Task<ServerDetail?> GetByIdAsync(int serverId)
         {
-            return db.ServerDetails.FirstOrDefaultAsync(s => s.Id == id);
+            return newsDb.ServerDetails.FirstOrDefaultAsync(server => server.Id == serverId);
         }
 
-        public Task UpdateApiKeyAsync(ServerDetail server, string newKey)
+        public Task UpdateApiKeyAsync(ServerDetail server, string newApiKey)
         {
-            if (string.IsNullOrWhiteSpace(newKey))
-                throw new ArgumentException("API key cannot be empty.", nameof(newKey));
+            if (string.IsNullOrWhiteSpace(newApiKey))
+                throw new ArgumentException("API key cannot be empty.", nameof(newApiKey));
 
-            server.ApiKey = newKey;
+            server.ApiKey = newApiKey;
             return Task.CompletedTask;
         }
 
         public Task UpdateAsync(ServerDetail server)
         {
-            db.ServerDetails.Update(server);
+            newsDb.ServerDetails.Update(server);
             return Task.CompletedTask;
         }
 
         public Task SaveChangesAsync()
         {
-            return db.SaveChangesAsync();
+            return newsDb.SaveChangesAsync();
         }
     }
 }

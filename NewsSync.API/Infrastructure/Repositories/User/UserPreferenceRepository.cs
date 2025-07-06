@@ -7,62 +7,60 @@ namespace NewsSync.API.Infrastructure.Repositories
 {
     public class UserPreferenceRepository : IUserPreferenceRepository
     {
-        private readonly NewsSyncNewsDbContext db;
+        private readonly NewsSyncNewsDbContext newsDb;
         private readonly NewsSyncAuthDbContext authDb;
 
-        public UserPreferenceRepository(NewsSyncNewsDbContext db, NewsSyncAuthDbContext authDb)
+        public UserPreferenceRepository(NewsSyncNewsDbContext newsDb, NewsSyncAuthDbContext authDb)
         {
-            this.db = db;
+            this.newsDb = newsDb;
             this.authDb = authDb;
         }
 
         public async Task<List<int>> GetPreferredCategoryIdsAsync(string userId)
         {
-            return await db.UserPreferences
-                .Where(p => p.UserId == userId)
-                .OrderByDescending(p => p.Weight)
-                .Select(p => p.CategoryId)
+            return await newsDb.UserPreferences
+                .Where(userPreference => userPreference.UserId == userId)
+                .OrderByDescending(userPreference => userPreference.Weight)
+                .Select(userPreference => userPreference.CategoryId)
                 .ToListAsync();
         }
 
         public async Task UpdatePreferencesAsync(string userId, List<int> categoryIds)
         {
-            var existing = await db.UserPreferences
-                .Where(p => p.UserId == userId)
+            var existing = await newsDb.UserPreferences
+                .Where(userPreference => userPreference.UserId == userId)
                 .ToListAsync();
 
-            db.UserPreferences.RemoveRange(existing);
+            newsDb.UserPreferences.RemoveRange(existing);
 
-            var newPrefs = categoryIds.Select(cId => new UserPreference
+            var newPrefs = categoryIds.Select(categoryId => new UserPreference
             {
                 UserId = userId,
-                CategoryId = cId,
+                CategoryId = categoryId,
                 Weight = 1
             }).ToList();
 
-            await db.UserPreferences.AddRangeAsync(newPrefs);
-            await db.SaveChangesAsync();
+            await newsDb.UserPreferences.AddRangeAsync(newPrefs);
+            await newsDb.SaveChangesAsync();
         }
 
         public async Task<List<string>> GetAllUserIdsAsync()
         {
             return await authDb.Users
-                .Select(u => u.Id)
+                .Select(user => user.Id)
                 .Distinct()
                 .ToListAsync();
         }
 
         public async Task UpsertUserPreferencesAsync(string userId, List<UserPreference> newPreferences)
         {
-            var existing = await db.UserPreferences
-                .Where(p => p.UserId == userId)
+            var existing = await newsDb.UserPreferences
+                .Where(userPreference => userPreference.UserId == userId)
                 .ToListAsync();
 
-            db.UserPreferences.RemoveRange(existing);
-            await db.UserPreferences.AddRangeAsync(newPreferences);
-            await db.SaveChangesAsync();
+            newsDb.UserPreferences.RemoveRange(existing);
+            await newsDb.UserPreferences.AddRangeAsync(newPreferences);
+            await newsDb.SaveChangesAsync();
         }
-
     }
-
 }

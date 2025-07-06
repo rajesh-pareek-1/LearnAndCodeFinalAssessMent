@@ -19,7 +19,7 @@ public class LoginScreen
         ConsoleOutputHelper.PrintHeader("Login");
 
         var username = ConsoleInputHelper.ReadRequiredString("Username: ");
-        var password = ConsoleInputHelper.ReadRequiredString("Password: ");
+        var password = ConsoleInputHelper.ReadPasswordMasked("Password: ");
 
         try
         {

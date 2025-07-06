@@ -22,7 +22,6 @@ namespace NewsSync.API.Domain.Common.Messages
         public const string ServerApiKeyUpdated = "Server API key updated.";
         public const string ArticleBlocked = "Article has been blocked.";
         public const string ArticleUnblocked = "Article has been unblocked.";
-
         public const string InvalidRegistrationInput = "Username and password are required.";
         public const string InvalidLoginInput = "Login credentials are required.";
         public const string InvalidCredentials = "Invalid email or password.";

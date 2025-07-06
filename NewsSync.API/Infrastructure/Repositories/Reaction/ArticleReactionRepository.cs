@@ -8,11 +8,11 @@ namespace NewsSync.API.Infrastructure.Repositories
 {
     public class ArticleReactionRepository : IArticleReactionRepository
     {
-        private readonly NewsSyncNewsDbContext db;
+        private readonly NewsSyncNewsDbContext newsDb;
 
-        public ArticleReactionRepository(NewsSyncNewsDbContext db)
+        public ArticleReactionRepository(NewsSyncNewsDbContext newsDb)
         {
-            this.db = db;
+            this.newsDb = newsDb;
         }
 
         public async Task AddOrUpdateReactionAsync(ReactionRequestDto dto)
@@ -20,14 +20,14 @@ namespace NewsSync.API.Infrastructure.Repositories
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
 
-            var existingReaction = await db.ArticleReactions
+            var existingReaction = await newsDb.ArticleReactions
                 .FirstOrDefaultAsync(r => r.ArticleId == dto.ArticleId && r.UserId == dto.UserId);
 
             if (existingReaction != null)
             {
                 if (existingReaction.IsLiked == dto.IsLiked)
                 {
-                    db.ArticleReactions.Remove(existingReaction);
+                    newsDb.ArticleReactions.Remove(existingReaction);
                 }
                 else
                 {
@@ -45,10 +45,10 @@ namespace NewsSync.API.Infrastructure.Repositories
                     ReactedAt = DateTime.UtcNow
                 };
 
-                await db.ArticleReactions.AddAsync(newReaction);
+                await newsDb.ArticleReactions.AddAsync(newReaction);
             }
 
-            await db.SaveChangesAsync();
+            await newsDb.SaveChangesAsync();
         }
 
         public async Task<List<ArticleReaction>> GetUserReactionsAsync(string userId, bool? isLiked = null)
@@ -56,7 +56,7 @@ namespace NewsSync.API.Infrastructure.Repositories
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
 
-            var query = db.ArticleReactions
+            var query = newsDb.ArticleReactions
                 .Include(r => r.Article)
                 .Where(r => r.UserId == userId);
 

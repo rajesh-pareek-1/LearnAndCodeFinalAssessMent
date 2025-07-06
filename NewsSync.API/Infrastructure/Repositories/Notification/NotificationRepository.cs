@@ -7,11 +7,11 @@ namespace NewsSync.API.Infrastructure.Repositories
 {
     public class NotificationRepository : INotificationRepository
     {
-        private readonly NewsSyncNewsDbContext db;
+        private readonly NewsSyncNewsDbContext newsDb;
 
-        public NotificationRepository(NewsSyncNewsDbContext db)
+        public NotificationRepository(NewsSyncNewsDbContext newsDb)
         {
-            this.db = db;
+            this.newsDb = newsDb;
         }
 
         public async Task<List<Notification>> GetUserNotificationsAsync(string userId)
@@ -19,7 +19,7 @@ namespace NewsSync.API.Infrastructure.Repositories
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
 
-            return await db.Notifications
+            return await newsDb.Notifications
                 .Include(n => n.Article)
                 .Where(n => n.UserId == userId)
                 .OrderByDescending(n => n.SentAt)
@@ -31,7 +31,7 @@ namespace NewsSync.API.Infrastructure.Repositories
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
 
-            return await db.NotificationConfigurations
+            return await newsDb.NotificationConfigurations
                 .Include(nc => nc.Category)
                 .Where(nc => nc.UserId == userId)
                 .ToListAsync();
@@ -39,18 +39,14 @@ namespace NewsSync.API.Infrastructure.Repositories
 
         public async Task AddNotificationConfigurationAsync(NotificationConfiguration config)
         {
-            if (config == null)
-                throw new ArgumentNullException(nameof(config));
-
-            await db.NotificationConfigurations.AddAsync(config);
+            ArgumentNullException.ThrowIfNull(config);
+            await newsDb.NotificationConfigurations.AddAsync(config);
         }
 
         public Task RemoveNotificationConfigurationAsync(NotificationConfiguration config)
         {
-            if (config == null)
-                throw new ArgumentNullException(nameof(config));
-
-            db.NotificationConfigurations.Remove(config);
+            ArgumentNullException.ThrowIfNull(config);
+            newsDb.NotificationConfigurations.Remove(config);
             return Task.CompletedTask;
         }
 
@@ -59,8 +55,8 @@ namespace NewsSync.API.Infrastructure.Repositories
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
 
-            return await db.NotificationConfigurations
-                .FirstOrDefaultAsync(nc => nc.UserId == userId && nc.CategoryId == categoryId);
+            return await newsDb.NotificationConfigurations
+                .FirstOrDefaultAsync(notificationConfiguration => notificationConfiguration.UserId == userId && notificationConfiguration.CategoryId == categoryId);
         }
 
         public async Task<Category?> GetCategoryByNameAsync(string categoryName)
@@ -68,13 +64,13 @@ namespace NewsSync.API.Infrastructure.Repositories
             if (string.IsNullOrWhiteSpace(categoryName))
                 throw new ArgumentException("Category name cannot be null or empty.", nameof(categoryName));
 
-            return await db.Categories
-                .FirstOrDefaultAsync(c => c.Name.ToLower() == categoryName.ToLower());
+            return await newsDb.Categories
+                .FirstOrDefaultAsync(category => category.Name.Equals(categoryName, StringComparison.CurrentCultureIgnoreCase));
         }
 
         public Task SaveChangesAsync()
         {
-            return db.SaveChangesAsync();
+            return newsDb.SaveChangesAsync();
         }
     }
 }

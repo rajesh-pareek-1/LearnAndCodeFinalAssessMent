@@ -57,8 +57,8 @@ namespace NewsSync.API.Application.Services
             query = string.IsNullOrWhiteSpace(query) ? null : query.Trim();
 
             var dateFiltered = articles
-                .Where(a =>
-                    DateTime.TryParse(a.PublishedDate, out var publishedDate) &&
+                .Where(article =>
+                    DateTime.TryParse(article.PublishedDate, out var publishedDate) &&
                     (!fromDate.HasValue || publishedDate >= fromDate.Value.Date) &&
                     (!toDate.HasValue || publishedDate < toDate.Value.Date.AddDays(1)))
                 .ToList();
@@ -66,19 +66,18 @@ namespace NewsSync.API.Application.Services
             var finalFiltered = string.IsNullOrWhiteSpace(query)
                 ? dateFiltered
                 : [.. dateFiltered
-                    .Where(a =>
-                        a.Headline.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                        a.Description.Contains(query, StringComparison.OrdinalIgnoreCase))];
+                    .Where(article =>
+                        article.Headline.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                        article.Description.Contains(query, StringComparison.OrdinalIgnoreCase))];
 
             if (!fromDate.HasValue && !toDate.HasValue && string.IsNullOrWhiteSpace(query))
             {
                 var today = DateTime.UtcNow.Date;
-                finalFiltered = [.. articles.Where(a => DateTime.TryParse(a.PublishedDate, out var publishedDate) && publishedDate.Date == today)];
+                finalFiltered = [.. articles.Where(article => DateTime.TryParse(article.PublishedDate, out var publishedDate) && publishedDate.Date == today)];
             }
 
             return finalFiltered;
         }
-
 
         public async Task<List<Article>> SortByUserPreferenceAsync(List<Article> articles, string? userId)
         {
