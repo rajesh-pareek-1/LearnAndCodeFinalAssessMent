@@ -13,9 +13,9 @@ public class FetchHeadlinesUseCase : IFetchHeadlinesUseCase
     public FetchHeadlinesUseCase(IArticleInteractionService articleInteractionService, ISessionContext sessionContext) =>
         (_articleInteractionService, _sessionContext) = (articleInteractionService, sessionContext);
 
-    public async Task<List<ArticleDto>> ExecuteAsync(DateTime fromDate, DateTime toDate, string? category)
+    public async Task<List<ArticleDto>> ExecuteAsync(DateTime fromDate, DateTime toDate)
     {
-        var fetchedArticles = await _articleInteractionService.FetchHeadlinesAsync(fromDate, toDate, category);
+        var fetchedArticles = await _articleInteractionService.FetchHeadlinesAsync(fromDate, toDate);
         if (_sessionContext.UserId is null || !fetchedArticles.Any()) return fetchedArticles;
 
         var likedArticleIds = (await _articleInteractionService.GetUserReactionsAsync(true)).Select(article => article.Id).ToHashSet();

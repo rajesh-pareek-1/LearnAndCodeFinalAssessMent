@@ -26,8 +26,11 @@ namespace NewsSync.API.Application.Services
             if (!string.IsNullOrWhiteSpace(userId))
                 filtered = await SortByUserPreferenceAsync(filtered, userId);
 
-            logger.LogInformation("Filtered {Count} articles with from: {From}, to: {To}, query: {Query}", filtered.Count, fromDate?.ToShortDateString(), toDate?.ToShortDateString(), query);
-            return filtered;
+            var topArticles = filtered.Take(50).ToList();
+
+            logger.LogInformation("Filtered {Count} articles with from: {From}, to: {To}, query: {Query}", topArticles.Count, fromDate?.ToShortDateString(), toDate?.ToShortDateString(), query);
+
+            return topArticles;
         }
 
         public async Task<List<Article>> SearchArticlesAsync(string query, string? userId)
@@ -51,31 +54,39 @@ namespace NewsSync.API.Application.Services
 
         private static List<Article> FilterArticles(List<Article> articles, DateTime? fromDate, DateTime? toDate, string? query)
         {
-            var filtered = articles
+            query = string.IsNullOrWhiteSpace(query) ? null : query.Trim();
+
+            var dateFiltered = articles
                 .Where(a =>
                     DateTime.TryParse(a.PublishedDate, out var publishedDate) &&
                     (!fromDate.HasValue || publishedDate >= fromDate.Value.Date) &&
-                    (!toDate.HasValue || publishedDate <= toDate.Value.Date) &&
-                    (string.IsNullOrWhiteSpace(query) || a.Headline.Contains(query, StringComparison.OrdinalIgnoreCase) || a.Description.Contains(query, StringComparison.OrdinalIgnoreCase)))
+                    (!toDate.HasValue || publishedDate < toDate.Value.Date.AddDays(1)))
                 .ToList();
+
+            var finalFiltered = string.IsNullOrWhiteSpace(query)
+                ? dateFiltered
+                : [.. dateFiltered
+                    .Where(a =>
+                        a.Headline.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                        a.Description.Contains(query, StringComparison.OrdinalIgnoreCase))];
 
             if (!fromDate.HasValue && !toDate.HasValue && string.IsNullOrWhiteSpace(query))
             {
                 var today = DateTime.UtcNow.Date;
-                filtered = [.. articles.Where(a => DateTime.TryParse(a.PublishedDate, out var publishedDate) && publishedDate.Date == today)];
+                finalFiltered = [.. articles.Where(a => DateTime.TryParse(a.PublishedDate, out var publishedDate) && publishedDate.Date == today)];
             }
 
-            return filtered;
+            return finalFiltered;
         }
+
 
         public async Task<List<Article>> SortByUserPreferenceAsync(List<Article> articles, string? userId)
         {
             var preferredCategoryIds = await preferenceRepository.GetPreferredCategoryIdsAsync(userId);
 
-            return articles
+            return [.. articles
                 .OrderByDescending(a => preferredCategoryIds.Contains(a.CategoryId) ? 1 : 0)
-                .ThenByDescending(a => DateTime.TryParse(a.PublishedDate, out var dt) ? dt : DateTime.MinValue)
-                .ToList();
+                .ThenByDescending(a => DateTime.TryParse(a.PublishedDate, out var dt) ? dt : DateTime.MinValue)];
         }
     }
 }

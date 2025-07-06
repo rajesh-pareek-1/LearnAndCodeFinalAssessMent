@@ -19,6 +19,7 @@ public class ArticleRenderer : IArticleRenderer
             ConsoleOutputHelper.PrintInfo($"Source      : {article.Url}");
             ConsoleOutputHelper.PrintInfo($"Description : {Truncate(article.Description, 160)}");
             ConsoleOutputHelper.PrintInfo($"Liked       : {(article.IsLiked ? "Yes" : "No")}   Disliked: {(article.IsDisliked ? "Yes" : "No")}");
+            ConsoleOutputHelper.PrintInfo($"Category    : {article.CategoryName}");
             ConsoleOutputHelper.PrintDivider();
         }
     }
