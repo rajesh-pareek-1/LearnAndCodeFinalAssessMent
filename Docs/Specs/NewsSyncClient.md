@@ -3,7 +3,7 @@
 # NewsSync Console Client
 
 
-The **NewsSync Console Client** is a cross-platform `.NET 7` console application designed to provide a streamlined, secure, and personalized news-reading experience for authenticated users. Built with clean code principles and layered architecture, it interacts with the `NewsSync.API` backend to fetch, display, and manage news content while maintaining simplicity in user experience and robustness in design.
+The **NewsSync Console Client** is a cross-platform `.NET 9` console application designed to provide a streamlined, secure, and personalized news-reading experience for authenticated users. Built with clean code principles and layered architecture, it interacts with the `NewsSync.API` backend to fetch, display, and manage news content while maintaining simplicity in user experience and robustness in design.
 
 
 ---
