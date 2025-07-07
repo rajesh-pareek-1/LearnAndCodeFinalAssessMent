@@ -1,0 +1,101 @@
+@startuml
+!define table(x) class x << (T,#FFAAAA) >>
+!define primaryKey(x) <u>x</u>
+left to right direction
+skinparam classAttributeIconSize 0
+
+' ========== TABLES ==========
+
+table(AspNetUsers) {
+  primaryKey(Id): string
+  UserName: string
+  Email: string
+  PasswordHash: string
+}
+
+table(AspNetRoles) {
+  primaryKey(Id): string
+  Name: string
+}
+
+table(AspNetUserRoles) {
+  UserId: string
+  RoleId: string
+}
+
+table(Category) {
+  primaryKey(Id): int
+  Name: string
+  Description: string
+}
+
+table(Article) {
+  primaryKey(Id): int
+  Headline: string
+  Description: string
+  Source: string
+  Url: string
+  CategoryId: int
+  AuthorName: string
+  ImageUrl: string
+  Language: string
+  PublishedDate: string
+}
+
+table(SavedArticle) {
+  primaryKey(Id): int
+  UserId: string
+  ArticleId: int
+}
+
+table(Notification) {
+  primaryKey(Id): int
+  UserId: string
+  ArticleId: int
+}
+
+table(NotificationConfiguration) {
+  primaryKey(Id): int
+  UserId: string
+  CategoryId: int
+}
+
+table(Keyword) {
+  primaryKey(Id): int
+  Name: string
+  UserId: string
+}
+
+table(ServerDetail) {
+  primaryKey(Id): int
+  ServerName: string
+  LastAccess: DateTime
+  Status: string
+  ApiKey: string
+}
+
+' ========== CROW'S FOOT RELATIONSHIPS ==========
+
+' User-Roles mapping
+AspNetUsers ||--o{ AspNetUserRoles : has
+AspNetRoles ||--o{ AspNetUserRoles : includes
+
+' Article → Category
+Category ||--o{ Article : contains
+
+' SavedArticle → User & Article
+AspNetUsers ||--o{ SavedArticle : saves
+Article ||--o{ SavedArticle : saved by
+
+' Notification → User & Article
+AspNetUsers ||--o{ Notification : receives
+Article ||--o{ Notification : notifies
+
+' NotificationConfig → User & Category
+AspNetUsers ||--o{ NotificationConfiguration : configures
+Category ||--o{ NotificationConfiguration : used in
+
+' Keyword → User
+AspNetUsers ||--o{ Keyword : defines
+
+@enduml

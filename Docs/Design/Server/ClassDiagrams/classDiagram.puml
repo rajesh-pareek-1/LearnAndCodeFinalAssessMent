@@ -1,0 +1,227 @@
+@startuml
+
+skinparam style strictuml
+skinparam classAttributeIconSize 0
+
+' === CONTROLLERS ===
+class AdminController {
+  +AddCategory(CategoryDto category)
+  +GetServerStatus()
+  +GetServerDetails()
+  +UpdateServer(int serverId, string newApiKey)
+}
+
+class ArticleController {
+  +GetArticles(DateTime? from, DateTime? to, int? category)
+  +SearchArticles(string query)
+  +GetSavedArticles()
+  +SaveArticle(int id)
+  +DeleteSavedArticle(int id)
+}
+
+class NotificationController {
+  +GetNotifications(string userId)
+  +GetNotificationConfig()
+  +UpdateNotificationConfig(ConfigDto config)
+}
+
+' === SERVICES ===
+interface ICategoryService {
+  +AddCategoryAsync(CategoryDto category)
+  +GetAllCategoriesAsync()
+}
+
+class CategoryService implements ICategoryService {
+  -ICategoryRepository _repo
+  +AddCategoryAsync()
+  +GetAllCategoriesAsync()
+}
+
+interface IServerService {
+  +GetServerStatusAsync()
+  +GetServerDetailsAsync()
+  +UpdateServerApiKeyAsync(int serverId, string newApiKey)
+}
+
+class ServerService implements IServerService {
+  -IServerRepository _repo
+  +GetServerStatusAsync()
+  +GetServerDetailsAsync()
+  +UpdateServerApiKeyAsync()
+}
+
+interface IArticleService {
+  +GetArticlesAsync(DateTime? from, DateTime? to, int? category)
+  +SearchArticlesAsync(string query)
+  +FetchExternalArticlesAsync(HttpClient client)
+  +SaveArticlesAsync(List<ArticleDto> articles)
+}
+
+class ArticleService implements IArticleService {
+  -IArticleRepository _repo
+  +GetArticlesAsync()
+  +SearchArticlesAsync()
+  +FetchExternalArticlesAsync()
+  +SaveArticlesAsync()
+}
+
+interface ISavedArticleService {
+  +GetSavedArticlesAsync(string userId)
+  +SaveArticleAsync(string userId, int articleId)
+  +DeleteSavedArticleAsync(string userId, int articleId)
+}
+
+class SavedArticleService implements ISavedArticleService {
+  -ISavedArticleRepository _repo
+  +GetSavedArticlesAsync()
+  +SaveArticleAsync()
+  +DeleteSavedArticleAsync()
+}
+
+interface INotificationService {
+  +GetNotificationsAsync(string userId)
+  +GetUserNotificationConfigAsync(string userId)
+  +UpdateNotificationConfigAsync(string userId, ConfigDto config)
+}
+
+class NotificationService implements INotificationService {
+  -INotificationRepository _repo
+  +GetNotificationsAsync()
+  +GetUserNotificationConfigAsync()
+  +UpdateNotificationConfigAsync()
+}
+
+interface IArticleSyncService {
+  +ExecuteAsync(CancellationToken token)
+}
+
+class ArticleSyncService extends BackgroundService implements IArticleSyncService {
+  -IServiceScopeFactory _scopeFactory
+  -ILogger<ArticleSyncService> _logger
+  --
+  +ArticleSyncService(IServiceScopeFactory scopeFactory, ILogger<ArticleSyncService> logger)
+  +ExecuteAsync(CancellationToken token)
+  +FetchExternalArticlesAsync(HttpClient client): List<ArticleDto>
+  +SaveArticlesAsync(NewsSyncNewsDbContext db, List<ArticleDto>)
+  --
+  ' Executes every 1 hour:
+  ' • Logs sync start
+  ' • Creates DI scope
+  ' • Gets HttpClient and ArticleService
+  ' • Fetches articles
+  ' • Deduplicates & saves them
+  ' • Logs sync complete
+}
+
+' === REPOSITORIES ===
+interface ICategoryRepository {
+  +AddAsync(Category category)
+  +GetAllAsync()
+}
+
+class CategoryRepository implements ICategoryRepository {
+  -NewsSyncNewsDbContext _context
+  +AddAsync()
+  +GetAllAsync()
+}
+
+interface IServerRepository {
+  +GetStatusAsync()
+  +GetDetailsAsync()
+  +UpdateApiKeyAsync(int serverId, string newApiKey)
+}
+
+class ServerRepository implements IServerRepository {
+  -NewsSyncNewsDbContext _context
+  +GetStatusAsync()
+  +GetDetailsAsync()
+  +UpdateApiKeyAsync()
+}
+
+interface IArticleRepository {
+  +GetArticlesAsync(DateTime? from, DateTime? to, int? category)
+  +SearchAsync(string query)
+  +SaveAsync(List<Article> articles)
+  +ExistsAsync(string externalId)
+}
+
+class ArticleRepository implements IArticleRepository {
+  -NewsSyncNewsDbContext _context
+  +GetArticlesAsync()
+  +SearchAsync()
+  +SaveAsync()
+  +ExistsAsync()
+}
+
+interface ISavedArticleRepository {
+  +GetSavedByUserAsync(string userId)
+  +SaveAsync(string userId, int articleId)
+  +DeleteAsync(string userId, int articleId)
+}
+
+class SavedArticleRepository implements ISavedArticleRepository {
+  -NewsSyncNewsDbContext _context
+  +GetSavedByUserAsync()
+  +SaveAsync()
+  +DeleteAsync()
+}
+
+interface INotificationRepository {
+  +GetByUserAsync(string userId)
+  +GetConfigAsync(string userId)
+  +UpdateConfigAsync(string userId, NotificationConfig config)
+}
+
+class NotificationRepository implements INotificationRepository {
+  -NewsSyncNewsDbContext _context
+  +GetByUserAsync()
+  +GetConfigAsync()
+  +UpdateConfigAsync()
+}
+
+' === DB CONTEXTS ===
+class NewsSyncAuthDbContext {
+  +DbSet<User> Users
+  +DbSet<Role> Roles
+}
+
+class NewsSyncNewsDbContext {
+  +DbSet<Article> Articles
+  +DbSet<Category> Categories
+  +DbSet<Server> Servers
+  +DbSet<Notification> Notifications
+  +DbSet<SavedArticle> SavedArticles
+}
+
+' === IDENTITY / AUTH ===
+class IdentityDataSeeder {
+  +SeedUsersAndRolesAsync()
+}
+
+class JwtAuthService {
+  +GenerateToken(User user): string
+}
+
+' === RELATIONSHIPS ===
+AdminController --> ICategoryService
+AdminController --> IServerService
+ArticleController --> IArticleService
+ArticleController --> ISavedArticleService
+NotificationController --> INotificationService
+
+CategoryService --> ICategoryRepository
+ServerService --> IServerRepository
+ArticleService --> IArticleRepository
+SavedArticleService --> ISavedArticleRepository
+NotificationService --> INotificationRepository
+ArticleSyncService --> IArticleService
+
+CategoryRepository --> NewsSyncNewsDbContext
+ServerRepository --> NewsSyncNewsDbContext
+ArticleRepository --> NewsSyncNewsDbContext
+SavedArticleRepository --> NewsSyncNewsDbContext
+NotificationRepository --> NewsSyncNewsDbContext
+
+IdentityDataSeeder --> NewsSyncAuthDbContext
+
+@enduml

@@ -1,0 +1,101 @@
+@startuml
+!theme plain
+left to right direction
+
+actor Client
+database "Main DB" as DB
+component "External News APIs" as ExternalAPI
+
+package "News App Backend" {
+
+  package "Authentication" {
+    usecase Login as UC_Login
+    usecase Authenticate as UC_Authenticate
+    usecase Authorise as UC_Authorise
+  }
+
+  package "Articles" {
+    usecase "Get Articles" as UC_GetArticles
+    usecase Filter as UC_Filter
+    usecase "Filter By Date Range" as UC_FilterDate
+    usecase "Filter By Search Query" as UC_FilterQuery
+    usecase Sort as UC_Sort
+    usecase "Sort By Date" as UC_SortDate
+    usecase "Sort By Like Or Dislikes" as UC_SortLikes
+  }
+
+  package "Saved Articles" {
+    usecase "Saved Articles" as UC_Saved
+    usecase "Get All Saved Articles" as UC_SavedGetAll
+    usecase "Add Saved Article" as UC_SavedAdd
+    usecase "Delete Saved Article" as UC_SavedDelete
+  }
+
+  package "Notifications" {
+    usecase "Notifications" as UC_Notifications
+    usecase "Get All Notifications" as UC_NotifyGet
+    usecase "Configure Notification" as UC_NotifyConfig
+  }
+
+  package "Server Config" {
+    usecase Server as UC_Server
+    usecase "Get All" as UC_ServerGetAll
+    usecase Update as UC_ServerUpdate
+    usecase "Add Category" as UC_AddCategory
+  }
+
+  package "News Fetch Scheduler" {
+    usecase "Cron Job: Every 3-4 Hours" as UC_Cron
+    usecase "Fetch News From External Apis" as UC_FetchNews
+    usecase "Add Category If Empty" as UC_AddIfEmpty
+    usecase "Send Notifications" as UC_SendNotifications
+  }
+}
+
+Client --> UC_Login
+UC_Login ..> UC_Authenticate : <<include>>
+UC_Login ..> UC_Authorise : <<include>>
+
+Client --> UC_GetArticles
+Client --> UC_Saved
+Client --> UC_Notifications
+Client --> UC_Server
+Client --> UC_AddCategory
+
+UC_GetArticles ..> UC_Filter : <<include>>
+UC_Filter ..> UC_FilterDate : <<include>>
+UC_Filter ..> UC_FilterQuery : <<include>>
+UC_GetArticles ..> UC_Sort : <<include>>
+UC_Sort ..> UC_SortDate : <<include>>
+UC_Sort ..> UC_SortLikes : <<include>>
+
+UC_Saved --> UC_SavedGetAll
+UC_Saved --> UC_SavedAdd
+UC_Saved --> UC_SavedDelete
+
+UC_Notifications --> UC_NotifyGet
+UC_Notifications --> UC_NotifyConfig
+
+UC_Server --> UC_ServerGetAll
+UC_Server --> UC_ServerUpdate
+
+UC_Authenticate --> DB
+UC_Authorise --> DB
+UC_GetArticles --> DB
+UC_SavedGetAll --> DB
+UC_SavedAdd --> DB
+UC_SavedDelete --> DB
+UC_NotifyConfig --> DB
+UC_ServerUpdate --> DB
+UC_ServerGetAll --> DB
+UC_AddCategory --> DB
+
+UC_SendNotifications --> DB
+UC_SendNotifications --> UC_Cron
+UC_Cron --> UC_FetchNews
+UC_FetchNews ..> UC_AddIfEmpty : <<include>>
+UC_FetchNews --> DB
+UC_FetchNews --> ExternalAPI
+UC_AddIfEmpty --> DB
+
+@enduml
