@@ -1,0 +1,83 @@
+@startuml
+!theme plain
+left to right direction
+
+actor User
+actor Admin
+
+rectangle "News Console App" {
+  
+  rectangle "Authentication Module" {
+    (Login)
+    (Logout)
+    (Authentication)
+    (Authorization)
+  }
+
+  rectangle "News Features" {
+    (View News)
+    (Headline)
+    (View Today News)
+    (Date Range)
+    (Show News By Category)
+    (Search News)
+    (Search News By Query)
+    (Filter By Date)
+    (Sort By Likes Or Dislikes)
+    (Save Article)
+    (View Saved Article)
+    (Delete Article)
+  }
+
+  rectangle "Notification Center" {
+    (Notification)
+    (View Notification)
+    (Configure Notification)
+    (Toggle Categories)
+    (Add New Keywords)
+  }
+
+  rectangle "Admin Panel" {
+    (View External Server Status)
+    (View External Server Details)
+    (Update Server Details)
+    (Add New Category)
+  }
+}
+
+' User relations
+User --> (Login)
+User --> (Logout)
+User --> (View News)
+User --> (Notification)
+
+(Login) .> (Authentication) : <<include>>
+(Login) .> (Authorization) : <<include>>
+(View Saved Article) .> (Delete Article) : <<include>>
+
+(View News) --> (Headline)
+(View News) --> (Search News)
+(View News) --> (View Saved Article)
+(Headline) --> (View Today News)
+(Headline) --> (Date Range)
+(Date Range) --> (Show News By Category)
+(Notification) --> (View Notification)
+(Notification) --> (Configure Notification)
+(Configure Notification) --> (Toggle Categories)
+(Configure Notification) --> (Add New Keywords)
+
+(Search News) --> (Search News By Query)
+(Search News By Query) .> (Filter By Date) : <<include>>
+(Search News By Query) .> (Sort By Likes Or Dislikes) : <<include>>
+(Search News By Query) .> (Save Article) : <<include>>
+(Show News By Category) .> (Save Article) : <<include>>
+
+' Admin relations
+Admin --> (Login)
+Admin --> (Logout)
+Admin --> (View External Server Status)
+Admin --> (View External Server Details)
+Admin --> (Update Server Details)
+Admin --> (Add New Category)
+
+@enduml
